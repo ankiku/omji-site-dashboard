@@ -229,8 +229,7 @@ export default function VisualBuildingHub({ tasks, drawings = [], projectId, pro
             {[
               { label: 'Completion', value: `${activePct}%`, sub: `${activeDist.completed}/${activeDist.total}`, color: 'var(--green)' },
               { label: 'In Progress', value: activeDist.inProgress, sub: 'active tasks', color: 'var(--amber)' },
-              { label: 'Delayed', value: activeDist.delayed, sub: 'attention needed', color: 'var(--rust)' },
-              { label: 'Drawings', value: activeD.length, sub: `${activeP.length} photos`, color: 'var(--gold-dark)' },
+              { label: 'Delayed', value: activeDist.delayed, sub: 'attention needed', color: 'var(--rust)' }
             ].map((kpi, i) => (
               <div key={i} className="bh-kpi">
                 <span style={{ fontSize: '.62rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 4 }}>{kpi.label}</span>
@@ -272,7 +271,6 @@ export default function VisualBuildingHub({ tasks, drawings = [], projectId, pro
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             {[
               { key: 'tasks', label: `Tasks (${activeT.length})` },
-              { key: 'drawings', label: `Drawings (${activeD.length})` },
               { key: 'photos', label: `Photos (${activeP.length})` },
             ].map(tab => (
               <button key={tab.key} className={`bh-detail-tab ${detailTab === tab.key ? 'active' : ''}`} onClick={() => setDetailTab(tab.key)}>
@@ -309,30 +307,6 @@ export default function VisualBuildingHub({ tasks, drawings = [], projectId, pro
               )
             )}
 
-            {detailTab === 'drawings' && (
-              activeD.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--concrete)' }}>
-                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>📐</div>
-                  <div style={{ fontSize: '.82rem', fontWeight: 600 }}>No drawings for {az?.label}</div>
-                  <div style={{ fontSize: '.72rem', marginTop: 4 }}>Tag drawings in Drawing Register with zone assignment.</div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {activeD.map(d => (
-                    <div key={d.id} className="bh-item">
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ fontSize: '.8rem', fontWeight: 600, color: 'var(--ink)' }}>{d.title}</div>
-                        <div style={{ fontSize: '.65rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{d.revision} · {d.drawnBy || 'Unknown'}</div>
-                      </div>
-                      <span style={{ fontSize: '.6rem', fontWeight: 700, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 4, background: d.status === 'Approved for Construction' ? 'var(--green-light)' : d.status === 'Revise & Resubmit' ? 'var(--rust-light)' : 'var(--amber-light)', color: d.status === 'Approved for Construction' ? 'var(--green)' : d.status === 'Revise & Resubmit' ? 'var(--rust)' : 'var(--amber)', fontFamily: 'var(--font-mono)' }}>
-                        {d.status || 'Pending'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-
             {detailTab === 'photos' && (
               activeP.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--concrete)' }}>
@@ -353,6 +327,39 @@ export default function VisualBuildingHub({ tasks, drawings = [], projectId, pro
           </div>
 
         </div>
+      </div>
+
+      {/* === BOTTOM: Separate Drawings Dashboard Widget === */}
+      <div style={{ marginTop: 'var(--sp-xl)', background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '20px', boxShadow: 'var(--shadow-sm)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>
+            Project Drawings ({drawings.length})
+          </div>
+        </div>
+        
+        {drawings.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--concrete)' }}>
+            <div style={{ fontSize: '2rem', marginBottom: 8 }}>📐</div>
+            <div style={{ fontSize: '.82rem', fontWeight: 600 }}>No drawings uploaded yet</div>
+            <div style={{ fontSize: '.72rem', marginTop: 4 }}>Go to the Drawing Register to upload project drawings.</div>
+          </div>
+        ) : (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
+            {drawings.slice(0, 8).map(d => (
+              <div key={d.id} className="bh-item" style={{ border: '1px solid var(--hairline)', padding: '12px', borderRadius: 'var(--radius-sm)' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: '.85rem', fontWeight: 600, color: 'var(--ink)' }}>{d.title}</div>
+                  <div style={{ fontSize: '.65rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginTop: 4 }}>
+                    Uploaded: {new Date(d.date || d.createdAt).toLocaleDateString()}
+                  </div>
+                </div>
+                {d.fileUrl && (
+                  <button className="btn btn-outline btn-sm" onClick={() => window.open(d.fileUrl, '_blank')}>View PDF</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

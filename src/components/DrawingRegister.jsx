@@ -109,15 +109,16 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
     if (!file) return;
     setUploading(true);
     try {
+      const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
       if (file.type.startsWith('image/')) {
         const compressed = await compressImage(file);
         const { url } = await uploadPhoto(projectId, 'drawing', compressed, () => {});
-        setForm(p => ({ ...p, fileUrl: url, fileName: file.name }));
+        setForm(p => ({ ...p, fileUrl: url, fileName: file.name, title: p.title || fileNameWithoutExt }));
         toast.success('Image drawing attached successfully');
       } else {
         const reader = new FileReader();
         reader.onload = (ev) => {
-          setForm(p => ({ ...p, fileUrl: ev.target.result, fileName: file.name }));
+          setForm(p => ({ ...p, fileUrl: ev.target.result, fileName: file.name, title: p.title || fileNameWithoutExt }));
           setUploading(false);
           toast.success('PDF / Document attached successfully');
         };
@@ -230,65 +231,19 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
-                <label>Sheet Title *</label>
-                <input className="form-input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} required placeholder="e.g. Typical Structural Slab Reinforcement Plan" />
+                <label>Sheet Title (Name) *</label>
+                <input className="form-input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} required placeholder="e.g. Ground Floor Plan" />
               </div>
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label>Discipline / Category</label>
-                  <select className="form-select" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                    {DOC_TYPES.map(t => <option key={t}>{t}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Revision Level</label>
-                  <input className="form-input" value={form.revision} onChange={e => setForm(p => ({ ...p, revision: e.target.value }))} placeholder="e.g. Rev 0, Rev 1..." />
-                </div>
-              </div>
-
-              <div className="form-grid-3">
-                <div className="form-group"><label>Drawn / Prepared By</label><input className="form-input" value={form.drawnBy} onChange={e => setForm(p => ({ ...p, drawnBy: e.target.value }))} placeholder="Architect firm name" /></div>
-                <div className="form-group"><label>Checked By (QA)</label><input className="form-input" value={form.checkedBy} onChange={e => setForm(p => ({ ...p, checkedBy: e.target.value }))} placeholder="Lead Engineer / PMC" /></div>
-                <div className="form-group"><label>Approved By (Client/PMC)</label><input className="form-input" value={form.approvedBy} onChange={e => setForm(p => ({ ...p, approvedBy: e.target.value }))} placeholder="Client Signatory" /></div>
-              </div>
-
-              <div className="form-group">
-                <label>Drawing Sheet File (PDF / Image)</label>
+              
+              <div className="form-group" style={{ marginTop: 'var(--sp-md)' }}>
+                <label>Drawing File (PDF / Image)</label>
                 <label className="xlsx-upload-area" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: 'var(--sp-md)', border: '2px dashed var(--gold)', borderRadius: 'var(--radius)', background: form.fileUrl ? 'var(--green-light)' : 'var(--gold-light)', textAlign: 'center' }}>
                   <span style={{ fontWeight: 600, fontSize: '0.82rem', color: form.fileUrl ? 'var(--green)' : 'var(--gold-dark)' }}>
-                    {uploading ? 'Uploading...' : form.fileName || form.fileUrl ? `✓ ${form.fileName || 'File attached'}` : 'Click to select drawing file'}
+                    {uploading ? 'Uploading...' : form.fileName || form.fileUrl ? `✓ ${form.fileName || 'File attached'}` : 'Click to select PDF or image file'}
                   </span>
-                  <input type="file" accept="image/*,.pdf,.dwg,.dxf" onChange={handleFileUpload} style={{ display: 'none' }} />
+                  <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} style={{ display: 'none' }} />
                 </label>
               </div>
-
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label>Building Zone / Floor level</label>
-                  <select className="form-select" value={normalizeZoneId(form.zone)} onChange={e => setForm(p => ({ ...p, zone: e.target.value }))}>
-                    <option value="Default">Auto-Detect Zone</option>
-                    {drawingZones.map(z => (
-                      <option key={z.id} value={z.id}>{z.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label>Review Status Approval Stamp</label>
-                  <select className="form-select" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-                    <option value="Pending Review">Pending Review</option>
-                    <option value="Approved for Construction">Approved for Construction</option>
-                    <option value="Approved as Noted">Approved as Noted</option>
-                    <option value="Revise & Resubmit">Revise & Resubmit</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label>Review Comments / Stamp Notes</label>
-                <textarea className="form-input" rows="2" style={{ resize: 'vertical', fontFamily: 'inherit', padding: '10px' }} value={form.architectComments} onChange={e => setForm(p => ({ ...p, architectComments: e.target.value }))} placeholder="Write specific review findings or corrections required..." />
-              </div>
-
-              <div className="form-group"><label>Notes</label><input className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="General file notes..." /></div>
               
               <div className="modal-actions">
                 <button type="submit" className="btn btn-primary" disabled={uploading}>{editId ? '✓ Update Sheet' : '+ Register Sheet'}</button>
