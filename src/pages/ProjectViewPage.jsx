@@ -504,6 +504,7 @@ function ProjectEditModal({ project, projectId, onClose }) {
     name: project.name || '', clientName: project.clientName || '',
     architectName: project.architectName || '', location: project.location || '',
     scopeOfWork: project.scopeOfWork || '', budget: project.budget || '',
+    slug: project.slug || '',
     startDate: toInputDate(project.startDate), targetHandover: toInputDate(project.targetHandover),
     floorsCount: project.floorsCount || 1,
     hasBasement: project.hasBasement || false,
@@ -543,7 +544,10 @@ function ProjectEditModal({ project, projectId, onClose }) {
       <div className="modal-content modal-lg" onClick={e => e.stopPropagation()}>
         <div className="modal-header"><h3>Edit Project</h3><button className="modal-close" onClick={onClose}>✕</button></div>
         <form onSubmit={handleSave}>
-          <div className="form-group"><label>Project Name</label><input className="form-input" name="name" value={form.name} onChange={handleChange} required /></div>
+          <div className="form-grid-2">
+            <div className="form-group"><label>Project Name</label><input className="form-input" name="name" value={form.name} onChange={handleChange} required /></div>
+            <div className="form-group"><label>Public URL Slug</label><input className="form-input" name="slug" value={form.slug} onChange={handleChange} placeholder="e.g. omji-site-123" required /></div>
+          </div>
           <div className="form-grid-2">
             <div className="form-group"><label>Client</label><input className="form-input" name="clientName" value={form.clientName} onChange={handleChange} /></div>
             <div className="form-group"><label>Architect</label><input className="form-input" name="architectName" value={form.architectName} onChange={handleChange} /></div>
