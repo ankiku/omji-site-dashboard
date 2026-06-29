@@ -20,6 +20,7 @@ const DOC_TYPES = [
 
 export default function DrawingRegister({ projectId, canEdit, project }) {
   const [drawings, setDrawings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -82,7 +83,10 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
   const drawingZones = getDrawingZonesList();
 
   useEffect(() => {
-    return subscribeToDrawings(projectId, setDrawings);
+    return subscribeToDrawings(projectId, (data) => {
+      setDrawings(data);
+      setLoading(false);
+    });
   }, [projectId]);
 
   const resetForm = () => {
@@ -276,7 +280,13 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
         </div>
       )}
 
-      {drawings.length === 0 && <div className="empty-state"><p>No drawing sheets registered yet.{canEdit ? ' Upload structural plans, elevations, plumbing details...' : ''}</p></div>}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '40px' }}>
+          <div className="spinner" style={{ width: 24, height: 24 }} />
+        </div>
+      ) : drawings.length === 0 ? (
+        <div className="empty-state"><p>No drawing sheets registered yet.{canEdit ? ' Upload structural plans, elevations, plumbing details...' : ''}</p></div>
+      ) : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
         {drawings.map(d => (
