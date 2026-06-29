@@ -649,6 +649,6 @@ if (fs.existsSync(path.join(__dirname, serveDir, 'index.html'))) {
     res.sendFile(path.join(__dirname, serveDir, 'index.html'));
   });
 }
-app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server listening on http://0.0.0.0:${PORT}`);
 });
