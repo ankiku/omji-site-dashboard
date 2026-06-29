@@ -642,13 +642,12 @@ app.get('/api/backup/export', authenticateToken, requireAdmin, async (req, res) 
   }
 });
 
-const serveDir = fs.existsSync(path.join(__dirname, 'public', 'index.html')) ? 'public' : '../dist';
-if (fs.existsSync(path.join(__dirname, serveDir, 'index.html'))) {
-  app.use(express.static(path.join(__dirname, serveDir)));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, serveDir, 'index.html'));
-  });
-}
+// Serve static frontend
+const distPath = path.join(__dirname, '../dist');
+app.use(express.static(distPath));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
+});
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on http://0.0.0.0:${PORT}`);
 });
