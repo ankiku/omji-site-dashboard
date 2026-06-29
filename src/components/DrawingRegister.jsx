@@ -299,11 +299,22 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
                 onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
                 onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
               >
-                <div style={{ height: '140px', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--hairline)' }}>
+                <div style={{ height: '140px', background: 'var(--paper-2)', position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--hairline)' }}>
                   {d.fileUrl && d.fileUrl.startsWith('data:image') ? (
                     <img src={d.fileUrl} alt={d.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : d.fileUrl && (d.fileUrl.startsWith('data:application/pdf') || d.fileUrl.endsWith('.pdf')) ? (
+                    <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'relative' }}>
+                      <iframe 
+                        src={`${d.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`} 
+                        style={{ width: '100%', height: '140px', border: 'none', pointerEvents: 'none', overflow: 'hidden' }}
+                        scrolling="no"
+                        title={d.title}
+                      />
+                      {/* Transparent overlay to catch clicks instead of iframe */}
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10 }}></div>
+                    </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--concrete)' }}>
+                    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--concrete)' }}>
                       <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                         <polyline points="14 2 14 8 20 8"></polyline>
