@@ -30,6 +30,12 @@ async function apiRequest(path, options = {}) {
       const errBody = await res.json();
       if (errBody && errBody.message) errMsg = errBody.message;
     } catch {}
+    if (res.status === 401 || errMsg === 'Invalid or expired token') {
+      localStorage.removeItem('osr_token');
+      localStorage.removeItem('osr_auth');
+      window.location.href = '/login';
+    }
+    
     throw new Error(errMsg);
   }
   return res.json();
@@ -192,6 +198,12 @@ export async function uploadPhoto(projectId, taskId, file, onProgress) {
       const errBody = await res.json();
       if (errBody && errBody.message) errMsg = errBody.message;
     } catch {}
+    if (res.status === 401 || errMsg === 'Invalid or expired token') {
+      localStorage.removeItem('osr_token');
+      localStorage.removeItem('osr_auth');
+      window.location.href = '/login';
+    }
+    
     throw new Error(errMsg);
   }
 
