@@ -58,7 +58,7 @@ export default function PhotoLogTab({ photos, tasks, projectId, canEdit, onPhoto
   const [filter, setFilter] = useState('all');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [form, setForm] = useState({ urls: [], caption: '' });
+  const [form, setForm] = useState({ urls: [], caption: '', date: new Date().toISOString().split('T')[0] });
   const [uploadProgress, setUploadProgress] = useState(0);
   const toast = useToast();
 
@@ -93,12 +93,11 @@ export default function PhotoLogTab({ photos, tasks, projectId, canEdit, onPhoto
     e.preventDefault();
     if (!form.urls || form.urls.length === 0) return;
     try {
-      const todayDate = new Date().toISOString().split('T')[0];
       for (const url of form.urls) {
         await addPhotoRecord(projectId, 'general', {
           url: url,
           caption: form.caption,
-          date: todayDate,
+          date: form.date,
           timestamp: Date.now()
         });
       }
@@ -219,9 +218,15 @@ export default function PhotoLogTab({ photos, tasks, projectId, canEdit, onPhoto
                   ))}
                 </div>
               )}
-              <div className="form-group">
-                <label>Caption / Remarks</label>
-                <input type="text" className="form-input" placeholder="e.g. Front facade view, block B excavation" value={form.caption} onChange={e => setForm(p => ({ ...p, caption: e.target.value }))} />
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                <div className="form-group" style={{ flex: 1, minWidth: '200px' }}>
+                  <label>Caption / Remarks</label>
+                  <input type="text" className="form-input" placeholder="e.g. Front facade view, block B excavation" value={form.caption} onChange={e => setForm(p => ({ ...p, caption: e.target.value }))} />
+                </div>
+                <div className="form-group" style={{ width: '150px' }}>
+                  <label>Date</label>
+                  <input type="date" className="form-input" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required />
+                </div>
               </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <button type="submit" className="btn btn-primary btn-sm" disabled={uploading || !form.urls || form.urls.length === 0}>
