@@ -318,14 +318,6 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
                 </div>
 
                 <div style={{ display: 'flex', gap: 'var(--sp-sm)', alignItems: 'center' }}>
-                  {/* Status Badge */}
-                  <span className={`expense-cat-badge ${
-                    d.status === 'Approved for Construction' ? 'green' :
-                    d.status === 'Approved as Noted' ? 'gold' :
-                    d.status === 'Revise & Resubmit' ? 'rust' : 'grey'
-                  }`} style={{ fontSize: '0.65rem', textTransform: 'uppercase', padding: '3px 8px', fontWeight: 600 }}>
-                    {d.status || 'Pending Review'}
-                  </span>
 
                   {d.fileUrl && (
                     <button onClick={() => handleViewFile(d)} className="btn btn-outline btn-sm" style={{ padding: '4px 10px', fontSize: '0.72rem' }}>
@@ -349,24 +341,6 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
                   )}
                 </div>
               </div>
-
-              {/* Review Comments Quote */}
-              {d.architectComments && (
-                <div style={{
-                  borderLeft: '3px solid var(--gold)',
-                  paddingLeft: '10px',
-                  marginTop: '6px',
-                  background: 'var(--paper-2)',
-                  paddingTop: '6px',
-                  paddingBottom: '6px',
-                  borderRadius: '0 4px 4px 0',
-                  fontSize: '0.75rem',
-                  fontStyle: 'italic',
-                  color: 'var(--ink-light)'
-                }}>
-                  <strong>💬 QA Stamp remarks:</strong> "{d.architectComments}"
-                </div>
-              )}
             </div>
           ))}
         </div>
