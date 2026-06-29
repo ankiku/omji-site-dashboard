@@ -2,7 +2,6 @@
   "name": "tool",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "main": "server/index.js",
   "scripts": {
     "dev": "vite",

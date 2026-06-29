@@ -24,10 +24,11 @@ dist-ssr
 *.sw?
 
 # Protect production data from being overwritten
+server/data/**/*.json
 server/data/*.json
-server/public/uploads/*
-!server/data/.gitkeep
-!server/public/uploads/.gitkeep
+server/public/uploads/**/*
+!server/data/**/.gitkeep
+!server/public/uploads/**/.gitkeep
 
 # Environment variables & local configuration
 .env
