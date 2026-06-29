@@ -105,30 +105,55 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    
     setUploading(true);
-    try {
-      const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-      if (file.type.startsWith('image/')) {
-        const compressed = await compressImage(file);
-        const { url } = await uploadPhoto(projectId, 'drawing', compressed, () => {});
-        setForm(p => ({ ...p, fileUrl: url, fileName: file.name, title: p.title || fileNameWithoutExt }));
-        toast.success('Image drawing attached successfully');
-      } else {
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          setForm(p => ({ ...p, fileUrl: ev.target.result, fileName: file.name, title: p.title || fileNameWithoutExt }));
-          setUploading(false);
-          toast.success('PDF / Document attached successfully');
-        };
-        reader.readAsDataURL(file);
-        return;
+    let successCount = 0;
+
+    for (const file of files) {
+      try {
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+        
+        let urlToSave = '';
+        if (file.type.startsWith('image/')) {
+          const compressed = await compressImage(file);
+          const { url } = await uploadPhoto(projectId, 'drawing', compressed, () => {});
+          urlToSave = url;
+        } else {
+          urlToSave = await new Promise((resolve) => {
+             const reader = new FileReader();
+             reader.onload = (ev) => resolve(ev.target.result);
+             reader.readAsDataURL(file);
+          });
+        }
+
+        if (editId || files.length === 1) {
+           // If editing or only 1 file, just update the form so they can hit "Register Sheet"
+           setForm(p => ({ ...p, fileUrl: urlToSave, fileName: file.name, title: p.title || fileNameWithoutExt }));
+           toast.success(`${file.name} attached successfully`);
+        } else {
+           // If uploading multiple, auto-save them immediately to save time
+           await addDrawing(projectId, {
+             ...form,
+             title: fileNameWithoutExt,
+             fileUrl: urlToSave,
+             fileName: file.name,
+             date: new Date().toISOString().split('T')[0]
+           });
+           successCount++;
+        }
+      } catch (err) {
+        toast.error(`Failed to process ${file.name}: ${err.message}`);
       }
-    } catch (err) {
-      toast.error('Upload failed: ' + err.message);
     }
+
     setUploading(false);
+    
+    if (!editId && files.length > 1 && successCount > 0) {
+       toast.success(`${successCount} drawings registered successfully`);
+       resetForm(); // close modal
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -236,12 +261,15 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
               </div>
               
               <div className="form-group" style={{ marginTop: 'var(--sp-md)' }}>
-                <label>Drawing File (PDF / Image)</label>
+                <label>Drawing File(s) (PDF / Image)</label>
+                <div style={{ fontSize: '0.7rem', color: 'var(--concrete)', marginBottom: '8px' }}>
+                  💡 Tip: You can select multiple files at once. They will be automatically registered!
+                </div>
                 <label className="xlsx-upload-area" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: 'var(--sp-md)', border: '2px dashed var(--gold)', borderRadius: 'var(--radius)', background: form.fileUrl ? 'var(--green-light)' : 'var(--gold-light)', textAlign: 'center' }}>
                   <span style={{ fontWeight: 600, fontSize: '0.82rem', color: form.fileUrl ? 'var(--green)' : 'var(--gold-dark)' }}>
-                    {uploading ? 'Uploading...' : form.fileName || form.fileUrl ? `✓ ${form.fileName || 'File attached'}` : 'Click to select PDF or image file'}
+                    {uploading ? 'Processing files...' : form.fileName || form.fileUrl ? `✓ ${form.fileName || 'File attached'}` : 'Click to select PDF or image file(s)'}
                   </span>
-                  <input type="file" accept="image/*,.pdf" onChange={handleFileUpload} style={{ display: 'none' }} />
+                  <input type="file" multiple={!editId} accept="image/*,.pdf" onChange={handleFileUpload} style={{ display: 'none' }} />
                 </label>
               </div>
               
