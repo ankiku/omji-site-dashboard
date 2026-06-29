@@ -12,7 +12,7 @@ const { initDb, getProjects, saveProjects, getUsers, saveUsers, getTasks, saveTa
 dotenv.config();
 
 
-const UPLOADS_DIR = path.join(__dirname, 'public', 'uploads');
+const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'public', 'uploads');
 
 // Ensure public/uploads directory exists on startup
 if (!fs.existsSync(UPLOADS_DIR)) {

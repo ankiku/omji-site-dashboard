@@ -3,7 +3,7 @@ const path = require('path');
 
 
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 
 // Ensure directory exists
 async function ensureDir(dirPath) {
