@@ -301,11 +301,12 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
               >
                 <div style={{ height: '140px', background: 'var(--paper-2)', position: 'relative', overflow: 'hidden', borderBottom: '1px solid var(--hairline)' }}>
                   {d.fileUrl && d.fileUrl.startsWith('data:image') ? (
-                    <img src={d.fileUrl} alt={d.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={d.fileUrl} alt={d.title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : d.fileUrl && (d.fileUrl.startsWith('data:application/pdf') || d.fileUrl.endsWith('.pdf')) ? (
                     <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'relative' }}>
                       <iframe 
                         src={`${d.fileUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`} 
+                        loading="lazy"
                         style={{ width: '100%', height: '140px', border: 'none', pointerEvents: 'none', overflow: 'hidden' }}
                         scrolling="no"
                         title={d.title}
