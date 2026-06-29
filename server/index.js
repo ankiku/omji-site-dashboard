@@ -259,6 +259,15 @@ app.post('/api/users/:userId/change-password', authenticateToken, async (req, re
 
 // ─── PROJECTS ROUTES ───
 
+app.get('/api/debug/path', (req, res) => {
+  res.json({
+    cwd: process.cwd(),
+    dirname: __dirname,
+    home: process.env.HOME || 'Not set',
+    recommendedDataDir: require('path').resolve(__dirname, '../../../omji_data/data')
+  });
+});
+
 app.get('/api/projects', authenticateToken, async (req, res) => {
   try {
     const projects = await getProjects();
