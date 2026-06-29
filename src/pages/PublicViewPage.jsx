@@ -9,6 +9,7 @@ import ScheduleTab from '../components/ScheduleTab';
 import PhotoLogTab from '../components/PhotoLogTab';
 import CuringLog from '../components/CuringLog';
 import VisualBuildingHub from '../components/VisualBuildingHub';
+import DrawingRegister from '../components/DrawingRegister';
 import {
   getProjectBySlug, subscribeToTasks, subscribeToPhotos, subscribeToDrawings
 } from '../services/localStorageService';
@@ -52,7 +53,7 @@ export default function PublicViewPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['dashboard', 'visual', 'schedule', 'photos', 'curing', 'cameras'].includes(tabParam)) {
+    if (tabParam && ['dashboard', 'visual', 'drawings', 'schedule', 'photos', 'curing', 'cameras'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -152,11 +153,12 @@ export default function PublicViewPage() {
 
         {/* ── Tab row (original CSS, no flex overrides) ── */}
         <div className="tab-row public-view-tabs">
-          {['dashboard', 'visual', 'photos', 'curing'].map(tab => (
+          {['dashboard', 'visual', 'drawings', 'photos', 'curing'].map(tab => (
             <button key={tab} className={`tab ${activeTab === tab ? 'active' : ''}`}
               onClick={() => setActiveTab(tab)}>
               {tab === 'dashboard' ? '🏠 Dashboard'
                 : tab === 'visual' ? '🏗️ Building Hub'
+                : tab === 'drawings' ? '📐 Drawings'
                 : tab === 'photos' ? '🖼️ Photo Log'
                 : '💧 Curing Log'}
             </button>
@@ -240,6 +242,11 @@ export default function PublicViewPage() {
               project={project}
               onPhotoClick={(p, i) => setLightbox({ photos: p, index: i })}
             />
+          )}
+
+          {/* ── Drawings ── */}
+          {activeTab === 'drawings' && (
+            <DrawingRegister projectId={project.id} canEdit={false} project={project} />
           )}
 
           {/* ── Schedule ── */}
