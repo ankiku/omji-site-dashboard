@@ -1,0 +1,568 @@
+import XLSX from 'xlsx';
+
+// ─── Helper ───────────────────────────────────────────────
+function d(str) { return str; }  // date as string
+
+// ─── Column Headers ───────────────────────────────────────
+const HEADERS = [
+  'Task\r\nNo.',
+  'Activity Description',
+  'Start Date',
+  'Finish Date',
+  'Duration\r\n(Days)',
+  'Trade /\r\nResponsibility',
+  'Actual\r\nStart',
+  'Actual\r\nFinish',
+  'Delay\r\n(Days)',
+  'Status',
+  'Remarks',
+  'Structural\r\nZone'
+];
+
+// ─── Data rows ───────────────────────────────────────────
+// Format: [taskNo, description, start, finish, duration, trade, '', '', '', status, remarks, zone]
+// Phase headers: [phaseName] — single element
+
+const tasks = [
+
+// ════════════════════════════════════════════════════════════
+// PHASE 1: MOBILIZATION & PRE-CONSTRUCTION
+// ════════════════════════════════════════════════════════════
+['PHASE 1: MOBILIZATION & PRE-CONSTRUCTION'],
+[1, 'Site mobilization — hoarding / board at site entrance with project details', '01-Jul-2026', '01-Jul-2026', 1, 'Mobilization', '', '', '', 'Not Started', 'Project board with Omji Construction details, client name, building type', 'General'],
+[2, 'Site mobilization — contractor site office / temporary shelter setup', '01-Jul-2026', '02-Jul-2026', 2, 'Mobilization', '', '', '', 'Not Started', 'Temporary shed for office, documents, plans storage', 'General'],
+[3, 'Site mobilization — labour accommodation / jhuggi / shed for workers', '01-Jul-2026', '02-Jul-2026', 2, 'Mobilization', '', '', '', 'Not Started', 'Basic accommodation with drinking water, toilet provision', 'General'],
+[4, 'Site mobilization — security cabin setup at entry gate', '01-Jul-2026', '01-Jul-2026', 1, 'Mobilization', '', '', '', 'Not Started', 'Guard cabin at main gate', 'General'],
+[5, 'Site mobilization — material storage yard demarcation (TMT, cement, aggregate)', '01-Jul-2026', '02-Jul-2026', 2, 'Mobilization', '', '', '', 'Not Started', 'Separate zones for steel, cement (covered), sand, aggregate', 'General'],
+[6, 'Temporary water connection — borewell/tanker arrangement for construction use', '01-Jul-2026', '02-Jul-2026', 2, 'Mobilization', '', '', '', 'Not Started', 'Sufficient water for concreting, curing, masonry', 'General'],
+[7, 'Temporary electrical power connection — meter board / generator standby', '01-Jul-2026', '02-Jul-2026', 2, 'Mobilization', '', '', '', 'Not Started', 'Power for welding, mixer, lighting; generator for standby', 'General'],
+[8, 'Procurement — first aid box, fire extinguisher, safety helmets, boots, PPE', '01-Jul-2026', '02-Jul-2026', 2, 'Safety', '', '', '', 'Not Started', 'Mandatory safety equipment at site from Day 1', 'General'],
+[9, 'Site survey — boundary verification as per approved drawing (54\'x99\' setback line)', '01-Jul-2026', '02-Jul-2026', 2, 'Survey', '', '', '', 'Not Started', 'Cross-check with Muhurat Point Location Plan; confirm all four corners', 'General'],
+[10, 'Site survey — total station / theodolite setup for grid line marking', '02-Jul-2026', '03-Jul-2026', 2, 'Survey', '', '', '', 'Not Started', 'Grid lines as per structural drawing; record coordinates', 'General'],
+[11, 'Layout marking — column centre points marked on ground (all grid intersections)', '04-Jul-2026', '05-Jul-2026', 2, 'Survey', '', '', '', 'Not Started', 'As per Ground Floor layout & structural drawing; total station preferred', 'General'],
+[12, 'Layout marking — building corners marked & checked diagonally for square', '04-Jul-2026', '04-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'Both diagonals to match; tolerance ±5mm', 'General'],
+[13, 'Benchmark fixing — permanent BM set with reference RL for all levels', '04-Jul-2026', '04-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'BM to be maintained throughout project; staff gauge and auto level used', 'General'],
+[14, 'Centering/shuttering material mobilization — plywood (18mm marine)', '01-Jul-2026', '03-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Qty as per shuttering schedule for footing, column, beam, slab', 'General'],
+[15, 'Centering/shuttering material mobilization — props (telescopic/ballies)', '01-Jul-2026', '03-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Minimum 200 props for slab centering; check condition before use', 'General'],
+[16, 'Centering/shuttering material mobilization — MS channels, cup-lock frames', '01-Jul-2026', '03-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Steel channels for beam bottom; cup-lock if available', 'General'],
+[17, 'TMT bar procurement — 1st lot (footing & column bars), Fe500/Fe500D', '01-Jul-2026', '04-Jul-2026', 4, 'Steel', '', '', '', 'Not Started', 'As per structural BBS; supplier to provide mill certificate; stack size-wise', 'General'],
+[18, 'TMT bar verification — check dia, weight, bend test on received bars', '04-Jul-2026', '04-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'SE to physically verify bar markings, diameter with calipers, mill test certificate', 'General'],
+[19, 'Cement procurement — 1st lot (OPC 53 grade or PPC as approved)', '01-Jul-2026', '03-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Stack on wooden pallets, covered with tarpaulin; FIFO usage', 'General'],
+[20, 'Sand procurement — Banas river sand, grading check (Zone II/III)', '01-Jul-2026', '03-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Silt content test before use; PM to approve sand source', 'General'],
+[21, 'Aggregate procurement — 20mm & 10mm graded stone chips', '01-Jul-2026', '03-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Washed aggregate; flakiness index check; stack separately from sand', 'General'],
+[22, 'Water quality test — site water tested for chloride, sulfate content before use', '02-Jul-2026', '02-Jul-2026', 1, 'Testing', '', '', '', 'Not Started', 'Potable water or test-certified water for concreting', 'General'],
+[23, 'Procurement — cube moulds (150mm × 150mm × 150mm) — min 12 sets', '02-Jul-2026', '03-Jul-2026', 2, 'Testing', '', '', '', 'Not Started', 'Required for concrete cube samples at every pour', 'General'],
+[24, 'Concrete mix design — M25 mix design approved from RMC plant or lab', '02-Jul-2026', '03-Jul-2026', 2, 'Testing', '', '', '', 'Not Started', 'RMC mix design report to be obtained and filed by SE', 'General'],
+[25, 'Sub-contractor finalization — RMC plant tie-up, rate & lead time confirmed', '01-Jul-2026', '03-Jul-2026', 3, 'Mobilization', '', '', '', 'Not Started', 'Confirm plant capacity, pump availability, transit mixer fleet for site', 'General'],
+[26, 'Sub-contractor finalization — bar bending team, shuttering team, masonry team', '01-Jul-2026', '03-Jul-2026', 3, 'Mobilization', '', '', '', 'Not Started', 'Confirm head-count; assign team leaders for each trade', 'General'],
+[27, 'Drawing distribution — structural drawings issued to SE & bar bending team', '03-Jul-2026', '03-Jul-2026', 1, 'Documentation', '', '', '', 'Not Started', 'Stamp as "Working Drawing"; filing system at site office', 'General'],
+[28, 'Drawing distribution — architectural drawings issued to SE & masonry team', '03-Jul-2026', '03-Jul-2026', 1, 'Documentation', '', '', '', 'Not Started', 'Door/window schedule, floor layout, setback line confirmed', 'General'],
+[29, 'Site diary commencement — SE to start daily site diary from Day 1', '01-Jul-2026', '01-Jul-2026', 1, 'Documentation', '', '', '', 'Not Started', 'Record: manpower, work done, material received, weather, issues daily', 'General'],
+[30, 'WhatsApp group setup — site update group with client, PM, SE, architect', '01-Jul-2026', '01-Jul-2026', 1, 'Communication', '', '', '', 'Not Started', 'Daily progress photo update by SE; minimum 3 photos per day', 'General'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 2: EXCAVATION & EARTHWORK
+// ════════════════════════════════════════════════════════════
+['PHASE 2: EXCAVATION & EARTHWORK'],
+[31, 'Excavation — staking out footing pit centers with pegs & string line', '06-Jul-2026', '06-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'All column footing centers marked before machine excavation starts', 'Foundation'],
+[32, 'Excavation — machine (JCB/poclain) excavation for isolated column footings — rough cut', '06-Jul-2026', '07-Jul-2026', 2, 'Excavation', '', '', '', 'Not Started', 'Footprint 54\'x99\' (~5,346 Sq.Ft); depth as per structural drawing', 'Foundation'],
+[33, 'Excavation — manual dressing of footing pits to correct depth & plan size', '07-Jul-2026', '08-Jul-2026', 2, 'Excavation', '', '', '', 'Not Started', 'Trim to exact footing plan dimensions; remove loose soil; level base', 'Foundation'],
+[34, 'Excavation — soil strata inspection & confirmation of bearing capacity at formation level', '08-Jul-2026', '08-Jul-2026', 1, 'Survey / Testing', '', '', '', 'Not Started', 'SE to inspect base; hard/firm stratum to be confirmed before PCC; inform PM if soil is soft or wet', 'Foundation'],
+[35, 'Excavation — dewatering (if sub-soil water encountered) with submersible pump', '06-Jul-2026', '08-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Pump on standby throughout footing work; check before each pour', 'Foundation'],
+[36, 'Excavation — plinth beam / grade beam trench marking', '08-Jul-2026', '09-Jul-2026', 2, 'Survey', '', '', '', 'Not Started', 'Mark trench line as per structural drawing; check widths at both ends', 'Foundation'],
+[37, 'Excavation — machine cut for plinth beam trench (rough)', '08-Jul-2026', '09-Jul-2026', 2, 'Excavation', '', '', '', 'Not Started', 'Trench width & depth as per structural; do not disturb footing edges', 'Foundation'],
+[38, 'Excavation — manual dressing of grade beam trench base & sides', '09-Jul-2026', '10-Jul-2026', 2, 'Excavation', '', '', '', 'Not Started', 'Dress trench base to exact level; SE to check level at 2m intervals', 'Foundation'],
+[39, 'Anti-termite treatment — soil poisoning to all excavated pits & trenches (spray)', '10-Jul-2026', '10-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Chemical treatment before PCC; material provided by client; follow IS 6313', 'Foundation'],
+[40, 'Anti-termite treatment — checklist filled by Site Engineer (location, chemical, concentration)', '10-Jul-2026', '10-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Mandatory before PCC; file signed checklist', 'Foundation'],
+[41, 'Anti-termite treatment — checklist verified & signed by Project Manager', '11-Jul-2026', '11-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to sign off before PCC begins', 'Foundation'],
+[42, 'Excavation — stacking of excavated earth for re-use in backfilling (separate zone)', '06-Jul-2026', '10-Jul-2026', 5, 'Civil', '', '', '', 'Not Started', 'Good earth to be stacked away from edge; bad soil / debris to be disposed', 'Foundation'],
+[43, 'Leveling and compaction of footing base with plate compactor / hand rammer', '10-Jul-2026', '11-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Compact loose soil at base; confirm level with auto-level', 'Foundation'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 3: FOUNDATION — PCC, FOOTING, COLUMN STARTER
+// ════════════════════════════════════════════════════════════
+['PHASE 3: FOUNDATION — PCC, FOOTING REINFORCEMENT, SHUTTERING & CASTING'],
+[44, 'PCC — check formwork/shuttering level for PCC (dry bricks as edge shuttering)', '12-Jul-2026', '12-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'PCC edge to be set with bricks/plywood; thickness 100-150mm', 'Foundation'],
+[45, 'PCC — wet the base of footing with water before PCC pouring', '12-Jul-2026', '12-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Do not allow standing water; damp base only', 'Foundation'],
+[46, 'PCC (1:4:8) — casting at all isolated footing bases (Zone 1)', '12-Jul-2026', '12-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', '100-150mm PCC bed through RMC/site mix; level surface within ±3mm', 'Foundation'],
+[47, 'PCC (1:4:8) — casting at all isolated footing bases (Zone 2)', '13-Jul-2026', '13-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Allow Zone 1 PCC to set; Zone 2 next day', 'Foundation'],
+[48, 'PCC — curing of PCC bed (min 24–48 hrs before reinforcement placing)', '12-Jul-2026', '14-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Wet curing; do not allow PCC to dry out; walk only after 12 hrs', 'Foundation'],
+[49, 'Footing reinforcement — BBS (Bar Bending Schedule) reading & material cutting list prepared by SE', '13-Jul-2026', '13-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'SE to extract cutting list from structural BBS before cutting starts', 'Foundation'],
+[50, 'Footing reinforcement — TMT bar straightening (if coiled/bent bars)', '13-Jul-2026', '13-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Mechanical straightener or manual; no kinks allowed after straightening', 'Foundation'],
+[51, 'Footing reinforcement — TMT bar cutting to required lengths as per BBS', '13-Jul-2026', '14-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'Bar cutting machine; cut to ±10mm tolerance; mark each cut pile with tag', 'Foundation'],
+[52, 'Footing reinforcement — TMT bar bending (hooks, bends, stirrups) as per BBS', '14-Jul-2026', '15-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'Bending machine; bending angles as per IS 2502; check diameter of mandrel', 'Foundation'],
+[53, 'Footing reinforcement — cover blocks placing on PCC bed (40mm cover)', '15-Jul-2026', '15-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Precast cement cover blocks 40mm; minimum 4 per sq.m at base', 'Foundation'],
+[54, 'Footing reinforcement — bottom mesh assembly & binding in-situ on cover blocks', '15-Jul-2026', '16-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'As per footing BBS; tie wire binding at every intersection; check cover', 'Foundation'],
+[55, 'Footing reinforcement — column starter bars placed, tied & checked for plumb', '16-Jul-2026', '16-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Column starter dia & number as per structural; check plumb with plumb bob; lap as specified', 'Foundation'],
+[56, 'Footing reinforcement — top mesh assembly & binding', '16-Jul-2026', '16-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Chair bars (cranked bars) to support top mesh at correct height; check spacing', 'Foundation'],
+[57, 'Footing reinforcement — side cover blocks placed on all sides (40mm side cover)', '16-Jul-2026', '16-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Tie cover blocks to outer bars; check all 4 sides', 'Foundation'],
+[58, 'Footing reinforcement — SE inspection checklist filled (cover, spacing, dia, laps)', '16-Jul-2026', '16-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Check: bar dia, spacing, no. of bars, lap length, cover, column starter plumb', 'Foundation'],
+[59, 'Footing reinforcement — PM verification & sign-off on reinforcement checklist', '17-Jul-2026', '17-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to physically inspect reinforcement; no shuttering before PM sign-off', 'Foundation'],
+[60, 'Footing shuttering — wooden/plywood edge shuttering fixed around footing (all 4 sides)', '16-Jul-2026', '17-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Plywood shuttering with stakes; check level at top edge; apply shuttering oil', 'Foundation'],
+[61, 'Footing shuttering — column starter shuttering (box for square column starter)', '17-Jul-2026', '17-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Accurate column starter position & size; tie column starter bars through box', 'Foundation'],
+[62, 'Footing shuttering — check shuttering plumb, squareness & top level before pour', '17-Jul-2026', '17-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'SE to re-check all shuttering before giving Go-ahead for concrete', 'Foundation'],
+[63, 'Footing concrete — slump test on RMC truck at site before each pour (target 100-120mm)', '18-Jul-2026', '18-Jul-2026', 1, 'Testing', '', '', '', 'Not Started', 'Reject RMC if slump out of range; record truck number, time, slump, temperature', 'Foundation'],
+[64, 'Footing concrete — cube sample collection (3 cubes per pour for 7-day & 28-day test)', '18-Jul-2026', '19-Jul-2026', 2, 'Testing', '', '', '', 'Not Started', 'Label cubes: date, pour No., truck No.; moist cure cubes for 24 hrs then dispatch to lab', 'Foundation'],
+[65, 'Footing concrete casting (M25 RCC) — Zone 1 (front block)', '18-Jul-2026', '18-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Through RMC; pour continuously; vibrator at 450mm lifts; no cold joints', 'Foundation'],
+[66, 'Footing concrete casting (M25 RCC) — Zone 2 (rear block)', '19-Jul-2026', '19-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Through RMC; same protocol as Zone 1; check column starter position after pour', 'Foundation'],
+[67, 'Footing casting — SE checklist filled immediately after pour (with time, truck nos.)', '19-Jul-2026', '19-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'SE to record time of pour start & finish, no. of trucks, slump readings', 'Foundation'],
+[68, 'Footing casting — PM verification of casting checklist', '20-Jul-2026', '20-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to countersign SE casting checklist; file cube sample register', 'Foundation'],
+[69, 'Footing curing — cover footing top with wet gunny bags within 4 hrs of casting', '18-Jul-2026', '18-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Wet gunny immediately to prevent surface cracking; especially in hot weather', 'Foundation'],
+[70, 'Footing curing — water curing of footing concrete (min 7 days), twice daily', '18-Jul-2026', '25-Jul-2026', 7, 'Civil', '', '', '', 'Not Started', 'SE to record curing in site diary each day; no curing skipped', 'Foundation'],
+[71, 'Footing de-shuttering — remove side shuttering after 24 hrs (footing sides only)', '20-Jul-2026', '20-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Do not disturb column starter; re-check column starter plumb after de-shuttering', 'Foundation'],
+[72, 'Column starter — re-survey & re-plumb check of all column starters after footing casting', '20-Jul-2026', '20-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'Any starter out of plumb by >5mm must be corrected before backfilling; report to PM', 'Foundation'],
+
+// ─── LIFT SHAFT — FOOTING TO PLINTH ────────────────────────
+['LIFT SHAFT — FOOTING TO PLINTH (RCC WALL)'],
+['19A', 'Lift shaft — marking of wall positions on footing PCC bed (all 4 sides)', '17-Jul-2026', '17-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'Mark wall center & edges on PCC; confirm with structural drawing', 'Foundation'],
+['19B', 'Lift shaft — RCC wall reinforcement cutting & bending (footing to plinth)', '17-Jul-2026', '19-Jul-2026', 3, 'Steel', '', '', '', 'Not Started', 'Min 200mm thick RCC wall; Fe500; confirm from structural consultant', 'Foundation'],
+['19C', 'Lift shaft — vertical bar placing & binding with horizontal rings', '18-Jul-2026', '19-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'Both faces of wall; 40mm cover; cover blocks tied on outer bars', 'Foundation'],
+['19D', 'Lift shaft — inner face shuttering fixed plumb (footing to plinth)', '19-Jul-2026', '20-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Inner shuttering first; ensure plumb; tie rods / spacers to maintain wall thickness', 'Foundation'],
+['19E', 'Lift shaft — outer face shuttering fixed plumb & braced', '19-Jul-2026', '20-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Both faces plumb; check diagonal; prop brace before pour', 'Foundation'],
+['19F', 'Lift shaft RCC wall casting (footing to plinth) — M25 RCC via pump', '21-Jul-2026', '21-Jul-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'Continuous pour; vibrator at max 450mm lifts; curing min 7 days', 'Foundation'],
+['19G', 'Lift shaft — curing of RCC wall min 7 days wet curing', '21-Jul-2026', '28-Jul-2026', 7, 'Civil', '', '', '', 'Not Started', 'Wet gunny both faces; record daily in site diary', 'Foundation'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 4: BACKFILLING, PLINTH COLUMN, STONE MASONRY, PLINTH BEAM
+// ════════════════════════════════════════════════════════════
+['PHASE 4: BACKFILLING, COLUMN (FOOTING TO PLINTH), STONE MASONRY & PLINTH BEAM'],
+[73, 'Backfilling — selected earth screened / sieved to remove stones & roots', '21-Jul-2026', '21-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Only clean earth used for backfill; debris free', 'Foundation'],
+[74, 'Backfilling — Layer 1 (200mm) placement around footings & manual tamping', '21-Jul-2026', '22-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', '200mm compacted layers; plate compactor or rammer each layer', 'Foundation'],
+[75, 'Backfilling — Layer 2 (200mm) placement & compaction', '22-Jul-2026', '23-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Continue layer-by-layer compaction; record layers in site diary', 'Foundation'],
+[76, 'Backfilling — Layer 3 & final layer compaction to plinth filling level', '23-Jul-2026', '24-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Compact to 95% proctor density; do not over-fill; leave space for plinth filling', 'Foundation'],
+[77, 'Column starter — layout re-check for all columns at plinth level (re-survey)', '23-Jul-2026', '23-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'Check all column center coordinates; any error to be corrected before column reinforcement', 'Foundation'],
+[78, 'Column reinforcement (footing to plinth) — BBS reading & cutting list', '21-Jul-2026', '21-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Extract cutting list from structural BBS; pre-cut all bars', 'Foundation'],
+[79, 'Column reinforcement (footing to plinth) — TMT bar cutting', '21-Jul-2026', '22-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'Correct lengths; lap with starter bars as per IS 13920', 'Foundation'],
+[80, 'Column reinforcement (footing to plinth) — stirrup/ring cutting & bending', '22-Jul-2026', '23-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'Stirrup spacing: 150mm at ends (2d), 200mm at mid; 135-degree hooks on stirrups', 'Foundation'],
+[81, 'Column reinforcement (footing to plinth) — vertical bar placing & lapping with starter', '22-Jul-2026', '23-Jul-2026', 2, 'Steel', '', '', '', 'Not Started', 'Lap length min 40d; bars aligned plumb; lap staggered (no all-bars lap at same level)', 'Foundation'],
+[82, 'Column reinforcement (footing to plinth) — stirrup tying from bottom to top', '23-Jul-2026', '23-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Stirrups tied at correct spacing; alternating tie wire directions; all corners tied', 'Foundation'],
+[83, 'Column reinforcement (footing to plinth) — cover blocks tied on all 4 sides (25mm cover)', '24-Jul-2026', '24-Jul-2026', 1, 'Steel', '', '', '', 'Not Started', 'Precast cement cover blocks; tie wire; minimum 3 per metre height', 'Foundation'],
+[84, 'Column shuttering (footing to plinth) — shuttering panels cut to column size', '24-Jul-2026', '24-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Shuttering panels oiled before assembly; 4-panel box for each column', 'Foundation'],
+[85, 'Column shuttering (footing to plinth) — 3 sides fixed, plumb & clamped', '24-Jul-2026', '25-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'Fix 3 sides first; check plumb both ways with spirit level before 4th side', 'Foundation'],
+[86, 'Column shuttering (footing to plinth) — 4th side fixed & all clamps tightened', '25-Jul-2026', '25-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'No gaps at bottom; pack with cement mortar if gap exists; clamp at 300mm intervals', 'Foundation'],
+[87, 'Column concrete casting (footing to plinth) — M25 RCC (Zone 1)', '26-Jul-2026', '26-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'RMC; pour in lifts ≤450mm; vibrator at all lifts; do not allow segregation', 'Foundation'],
+[88, 'Column concrete casting (footing to plinth) — M25 RCC (Zone 2)', '27-Jul-2026', '27-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Same protocol as Zone 1; slump test before each pour', 'Foundation'],
+[89, 'Column casting — SE checklist filled immediately after pour', '27-Jul-2026', '27-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Time, truck, slump, cube sample details recorded', 'Foundation'],
+[90, 'Column casting — PM verification of casting checklist', '28-Jul-2026', '28-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to countersign', 'Foundation'],
+[91, 'Column curing — wet gunny bags wrapped within 4 hrs of de-shuttering', '26-Jul-2026', '30-Jul-2026', 5, 'Civil', '', '', '', 'Not Started', 'Wrap all columns; wet twice daily; record in site diary', 'Foundation'],
+[92, 'Column de-shuttering — remove shuttering after 24 hrs (plinth columns)', '27-Jul-2026', '27-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Tap gently to release; do not chip concrete; report honeycombs to PM', 'Foundation'],
+[93, 'Column de-shuttering — inspect column surface for honeycombs, cracks', '27-Jul-2026', '27-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Minor HCs to be filled with non-shrink grout; major HC → PM decision', 'Foundation'],
+[94, 'Column — date & time marking on each column after de-shuttering', '27-Jul-2026', '27-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Mark casting date on column with paint marker; helps track curing age', 'Foundation'],
+[95, 'Stone masonry — material inspection (stone size, shape, hardness check)', '28-Jul-2026', '28-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Stone quality check before work starts; ensure no flaky stones used', 'Foundation'],
+[96, 'Stone masonry — CM mortar preparation station setup (mixer & water at site)', '28-Jul-2026', '28-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Mortar mix 1:4 (cement:sand); batch control by SE; no hand mix without PM permission', 'Foundation'],
+[97, 'Stone masonry — first course laid & leveled (footing level to +300mm)', '28-Jul-2026', '30-Jul-2026', 3, 'Stone Masonry', '', '', '', 'Not Started', 'Ensure good bed joint; vertical joints staggered; hammer-dress stones at corners', 'Foundation'],
+[98, 'Stone masonry — second & subsequent courses (filling between columns, all around)', '30-Jul-2026', '05-Aug-2026', 7, 'Stone Masonry', '', '', '', 'Not Started', 'Work in lifts; allow each lift to set before next; plumb check with spirit level each day', 'Foundation'],
+[99, 'Stone masonry — final courses up to plinth beam bottom level', '05-Aug-2026', '11-Aug-2026', 7, 'Stone Masonry', '', '', '', 'Not Started', 'Top of stone masonry dressed level; ready to receive plinth beam shuttering', 'Foundation'],
+[100, 'Stone masonry — SE checklist filled (height, plumb, mortar quality)', '11-Aug-2026', '11-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'SE to record top-of-wall level at all column faces', 'Foundation'],
+[101, 'Stone masonry — PM verification of masonry checklist', '12-Aug-2026', '12-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to inspect all around; countersign checklist', 'Foundation'],
+[102, 'Plinth beam — BBS reading for plinth beam reinforcement', '12-Aug-2026', '12-Aug-2026', 1, 'Steel', '', '', '', 'Not Started', 'Extract from structural drawing; cutting list for main bars & stirrups', 'Foundation'],
+[103, 'Plinth beam — main bar cutting & bending', '12-Aug-2026', '13-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', 'Bottom & top bars cut to beam span + laps; crank as per drawing', 'Foundation'],
+[104, 'Plinth beam — stirrup cutting & bending at correct spacing', '12-Aug-2026', '13-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', 'Stirrups at 100mm near supports, 150mm at mid; 135-degree hooks', 'Foundation'],
+[105, 'Plinth beam — bottom cover blocks placed on stone masonry top', '13-Aug-2026', '13-Aug-2026', 1, 'Steel', '', '', '', 'Not Started', '25mm bottom cover; cement cover blocks or plastic chairs', 'Foundation'],
+[106, 'Plinth beam — reinforcement cage assembled in-situ (bars through stirrups)', '13-Aug-2026', '13-Aug-2026', 1, 'Steel', '', '', '', 'Not Started', 'Thread main bars through pre-tied stirrups; bind all stirrup–main bar junctions', 'Foundation'],
+[107, 'Plinth beam — side cover blocks tied on both faces', '13-Aug-2026', '14-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', '25mm side cover; tie at 500mm intervals', 'Foundation'],
+[108, 'Plinth beam shuttering — bottom board fixed on stone masonry top', '13-Aug-2026', '14-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Level bottom board; nail to stone masonry; apply shuttering oil', 'Foundation'],
+[109, 'Plinth beam shuttering — two side panels fixed & clamped at correct beam width', '14-Aug-2026', '14-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Check beam width with spacer; clamp at top & bottom; prop side panels if beam >300mm deep', 'Foundation'],
+[110, 'Plinth beam — final pre-pour check by SE (cover, bar positions, shuttering tight)', '14-Aug-2026', '14-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Mandatory pre-pour check; SE to verify all beams before giving RMC order', 'Foundation'],
+[111, 'Plinth beam casting — M25 RCC; continuous pour in one go', '15-Aug-2026', '15-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Through RMC; vibrator at 450mm lifts; finish top level with beam top', 'Foundation'],
+[112, 'Plinth beam — SE checklist filled immediately after pour', '15-Aug-2026', '15-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Record time, truck, slump, cube samples', 'Foundation'],
+[113, 'Plinth beam — PM verification of casting checklist', '16-Aug-2026', '16-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM countersigns; cube sample register updated', 'Foundation'],
+[114, 'Plinth beam curing — wet gunny bags on top within 4 hrs; wet twice daily', '15-Aug-2026', '22-Aug-2026', 8, 'Civil', '', '', '', 'Not Started', 'Ponding preferred; water curing on top surface; min 7 days; parallel to backfill & column above', 'Foundation'],
+[115, 'Plinth beam de-shuttering — remove side shuttering after 24 hrs', '16-Aug-2026', '16-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Tap gently; inspect surface; report HCs; keep bottom board until beam is loaded', 'Foundation'],
+[116, 'Anti-termite treatment — second dose below plinth filling area (spray before filling)', '17-Aug-2026', '17-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'IS 6313 compliance; chemical applied before murram/sand filling; client to supply chemical', 'Foundation'],
+[117, 'Plinth filling — layer 1 (200mm) murram/sand filling inside plinth beam boundary', '17-Aug-2026', '18-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Selected earth/murram; compact each layer with rammer before next', 'Foundation'],
+[118, 'Plinth filling — layer 2 (200mm) filling & compaction', '18-Aug-2026', '19-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Water the layer before compaction; record number of layers in diary', 'Foundation'],
+[119, 'Plinth filling — final layer dressed to subfloor level; level checked with auto-level', '19-Aug-2026', '19-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Top level to match plinth beam top; SE to verify with level staff', 'Foundation'],
+
+// ─── LIFT SHAFT — PLINTH TO GF ROOF ───────────────────────
+['LIFT SHAFT — PLINTH TO GF ROOF (RCC COLUMNS + BRICK INFILL)'],
+['45A', 'Lift shaft — column position re-check at plinth level (re-survey)', '19-Aug-2026', '19-Aug-2026', 1, 'Survey', '', '', '', 'Not Started', 'Re-confirm all 4 corners of lift shaft at plinth level before column reinforcement', 'Ground Floor'],
+['45B', 'Lift shaft RCC column reinforcement (plinth to GF roof) — cutting, bending, binding', '19-Aug-2026', '21-Aug-2026', 3, 'Steel', '', '', '', 'Not Started', 'Lift shaft corner columns; refer structural drawing for size & spacing; laps with plinth bars', 'Ground Floor'],
+['45C', 'Lift shaft RCC column shuttering (plinth to GF roof) — 4 sides', '21-Aug-2026', '22-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Shuttering for corner columns; check plumb both ways; oil before fixing', 'Ground Floor'],
+['45D', 'Lift shaft RCC column casting (plinth to GF roof) — M25 RCC', '23-Aug-2026', '23-Aug-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'RMC M25; zone-wise; curing min 8 days', 'Ground Floor'],
+['45E', 'Lift shaft brick infill masonry (plinth to GF roof) — between RCC columns', '27-Aug-2026', '30-Aug-2026', 4, 'Civil', '', '', '', 'Not Started', '9-inch brick masonry; parallel to GF masonry Phase 6; bond with columns at every 4th course', 'Ground Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 5: GROUND FLOOR COLUMN WORK
+// ════════════════════════════════════════════════════════════
+['PHASE 5: GROUND FLOOR (GF) COLUMN WORK'],
+[120, 'GF column — column starter re-survey & kicker marking at plinth beam level', '19-Aug-2026', '19-Aug-2026', 1, 'Survey', '', '', '', 'Not Started', 'Mark column positions on plinth beam top with paint; offset lines for shuttering edge', 'Ground Floor'],
+[121, 'GF column reinforcement — BBS reading & cutting list for 12-ft height', '19-Aug-2026', '19-Aug-2026', 1, 'Steel', '', '', '', 'Not Started', 'Column height per 12 ft floor; extract from structural BBS', 'Ground Floor'],
+[122, 'GF column reinforcement — vertical bar cutting (12 ft height including laps)', '19-Aug-2026', '20-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', 'Min 40d lap with plinth column bars; stagger laps', 'Ground Floor'],
+[123, 'GF column reinforcement — stirrup bending (confining & supplementary stirrups)', '20-Aug-2026', '21-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', 'IS 13920 ductile detailing; closer spacing at top & bottom (2d zone)', 'Ground Floor'],
+[124, 'GF column reinforcement — vertical bar lapping with plinth column starters', '21-Aug-2026', '22-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', 'Lap staggered; both bars tied with minimum 3 ties within lap zone', 'Ground Floor'],
+[125, 'GF column reinforcement — stirrups threaded & tied at correct spacing top to bottom', '22-Aug-2026', '23-Aug-2026', 2, 'Steel', '', '', '', 'Not Started', 'Stirrup spacing: 150mm in 2d zone at top & bottom; 200mm at mid', 'Ground Floor'],
+[126, 'GF column reinforcement — cover blocks (25mm) tied on all faces at correct spacing', '23-Aug-2026', '23-Aug-2026', 1, 'Steel', '', '', '', 'Not Started', 'Min 3 per metre height on each face', 'Ground Floor'],
+[127, 'GF column reinforcement — SE inspection checklist filled before shuttering', '23-Aug-2026', '23-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Check: bar dia, number, spacing, lap, cover, stirrup spacing; sign checklist', 'Ground Floor'],
+[128, 'GF column reinforcement — PM verification & sign-off', '24-Aug-2026', '24-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to physically inspect; countersign; no shuttering before PM sign-off', 'Ground Floor'],
+[129, 'GF column shuttering — measure & cut shuttering panels to column height', '23-Aug-2026', '24-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', '12 ft height shuttering; use full-height plywood panels where possible', 'Ground Floor'],
+[130, 'GF column shuttering — apply shuttering oil to all panels before assembly', '23-Aug-2026', '23-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Thin coat of oil; prevents bond; ensures clean de-shuttering', 'Ground Floor'],
+[131, 'GF column shuttering — fix 3 sides, check plumb both ways', '24-Aug-2026', '25-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Use spirit level & plumb bob; tolerance ±3mm over column height', 'Ground Floor'],
+[132, 'GF column shuttering — fix 4th side & all clamps (yokes) tightened at 300mm c/c', '25-Aug-2026', '25-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'No gap at bottom (pack with plaster if needed); all yokes tight before pour', 'Ground Floor'],
+[133, 'GF column shuttering — prop & brace shuttering against lateral movement during pour', '25-Aug-2026', '25-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Diagonal props on 2 faces; additional bracing for 12-ft columns', 'Ground Floor'],
+[134, 'GF column casting — slump test on each RMC truck at site gate', '26-Aug-2026', '29-Aug-2026', 4, 'Testing', '', '', '', 'Not Started', 'Target slump 100-120mm; reject if out of range; record truck no. & slump', 'Ground Floor'],
+[135, 'GF column casting — cube samples (3 cubes per pour per truck)', '26-Aug-2026', '29-Aug-2026', 4, 'Testing', '', '', '', 'Not Started', 'Label, cure, dispatch to lab; file lab reports', 'Ground Floor'],
+[136, 'GF column concrete casting (zone-wise) — M25 RCC (Day 1: Zone A)', '26-Aug-2026', '26-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'RMC pump; pour in 450mm lifts; vibrator compaction at each lift', 'Ground Floor'],
+[137, 'GF column concrete casting (zone-wise) — M25 RCC (Day 2: Zone B)', '27-Aug-2026', '27-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Continue zone-wise; brick work starts on already-cast Zone A columns from today', 'Ground Floor'],
+[138, 'GF column concrete casting (zone-wise) — M25 RCC (Day 3: Zone C)', '28-Aug-2026', '28-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Zone-wise casting continues', 'Ground Floor'],
+[139, 'GF column concrete casting (zone-wise) — M25 RCC (Day 4: Zone D)', '29-Aug-2026', '29-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Final zone; all columns complete', 'Ground Floor'],
+[140, 'GF column casting — SE checklist filled same day as pour', '29-Aug-2026', '29-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Time, truck no., slump, cube sample details recorded', 'Ground Floor'],
+[141, 'GF column casting — PM verification of casting checklist', '30-Aug-2026', '30-Aug-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM countersigns; file with cube sample register', 'Ground Floor'],
+[142, 'GF column de-shuttering — remove shuttering 24 hrs after each column pour', '30-Aug-2026', '31-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Gently tap & remove panels; inspect surface; fill HCs with non-shrink grout same day', 'Ground Floor'],
+[143, 'GF column — date & time marking on each column after de-shuttering', '30-Aug-2026', '30-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Mark casting date prominently; helps track curing age and quality audit', 'Ground Floor'],
+[144, 'GF column curing — wet gunny bags on all faces twice daily for 8 days', '30-Aug-2026', '07-Sep-2026', 9, 'Civil', '', '', '', 'Not Started', 'SE to record curing in site diary; video update to PM group daily', 'Ground Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 6: GF BRICK MASONRY & LINTEL
+// ════════════════════════════════════════════════════════════
+['PHASE 6: GROUND FLOOR (GF) BRICK MASONRY & LINTEL'],
+[145, 'Brick/block procurement — 1st lot for GF masonry, check brick quality', '22-Aug-2026', '25-Aug-2026', 4, 'Civil', '', '', '', 'Not Started', 'Fly-ash or clay brick as approved; absorption test; efflorescence test; confirm quantity', 'Ground Floor'],
+[146, 'Brick masonry — mortar mix station setup (1:6 CM for walls)', '27-Aug-2026', '27-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', 'Batch by volume; mixer at site; SE to check mortar consistency', 'Ground Floor'],
+[147, 'Brick masonry — soak bricks in water for 1 hour before use', '27-Aug-2026', '01-Sep-2026', 6, 'Civil', '', '', '', 'Not Started', 'Wet bricks daily; do not use dry bricks; prevent water absorption from mortar', 'Ground Floor'],
+[148, 'GF external wall brick masonry — DPC (Damp Proof Course) at plinth level, 20mm CM 1:2 + WP compound', '27-Aug-2026', '27-Aug-2026', 1, 'Civil', '', '', '', 'Not Started', '20mm DPC on plinth beam top; two coats; full width of wall; allow to set before masonry', 'Ground Floor'],
+[149, 'GF external wall brick masonry — 9 inch external walls (first 1m height)', '27-Aug-2026', '28-Aug-2026', 2, 'Civil', '', '', '', 'Not Started', 'Start after DPC; bond bricks at corners; check plumb & level every 3 courses', 'Ground Floor'],
+[150, 'GF external wall brick masonry — 9 inch external walls (1m to 2m height)', '28-Aug-2026', '30-Aug-2026', 3, 'Civil', '', '', '', 'Not Started', 'Continue courses; rake joints while fresh for plastering key', 'Ground Floor'],
+[151, 'GF external wall brick masonry — 9 inch external walls (2m to lintel level)', '30-Aug-2026', '01-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', '2 masonry crews; external team accelerated; door/window frames/chhokhat placed before this course', 'Ground Floor'],
+[152, 'GF external wall masonry — toothing left at junctions with internal walls (every 3rd course)', '27-Aug-2026', '01-Sep-2026', 6, 'Civil', '', '', '', 'Not Started', 'Toothing instead of straight joint at T-junctions; bond subsequent internal walls', 'Ground Floor'],
+[153, 'GF internal wall brick/block masonry — 4.5 inch partition walls', '31-Aug-2026', '04-Sep-2026', 5, 'Civil', '', '', '', 'Not Started', 'Plumb & level; bond with external wall toothing; door frame position confirmed', 'Ground Floor'],
+[154, 'GF masonry — SE checklist filled (plumb, level, mortar quality, bond)', '04-Sep-2026', '04-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'SE to measure plumb each wall face; max deviation 5mm per storey height', 'Ground Floor'],
+[155, 'GF masonry — PM verification of masonry checklist', '05-Sep-2026', '05-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to inspect random walls; countersign; any out-of-plumb wall to be rebuilt', 'Ground Floor'],
+[156, 'GF masonry — electrical conduit chase cutting in walls for concealed wiring (MEP coordination)', '01-Sep-2026', '04-Sep-2026', 4, 'Coordination', '', '', '', 'Not Started', 'Civil scope: cut chase & fix conduit as per electrician marks; cover with cement mortar', 'Ground Floor'],
+[157, 'Lintel level marking — RL of lintel bottom marked on all door/window opening columns', '04-Sep-2026', '04-Sep-2026', 1, 'Survey', '', '', '', 'Not Started', 'SE to mark lintel soffit level on columns; confirm height from drawing', 'Ground Floor'],
+[158, 'Lintel beam — reinforcement cutting, bending & cover blocks placed', '05-Sep-2026', '06-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Min 2 bars top & bottom; stirrups at 150mm c/c; 25mm cover; 150mm bearing each side', 'Ground Floor'],
+[159, 'Lintel beam — shuttering fixed at correct soffit level', '05-Sep-2026', '06-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Bottom board on temporary supports; side boards clamped; level checked before pour', 'Ground Floor'],
+[160, 'Lintel beam casting — M25 RCC; pour & vibrate', '07-Sep-2026', '07-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Small volume; compact thoroughly; cure for 3 days before removing shuttering', 'Ground Floor'],
+[161, 'Lintel beam curing — wet for 3 days; de-shutter after 3 days', '07-Sep-2026', '09-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Continue masonry courses above lintel only after curing', 'Ground Floor'],
+[162, 'GF masonry — courses above lintel up to beam bottom level', '10-Sep-2026', '12-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Final masonry courses; check top level to be within 25mm of beam bottom', 'Ground Floor'],
+
+// ─── GF STRONG ROOM ─────────────────────────────────────────
+['GF STRONG ROOM / LOCKER ROOM — RCC WALLS (10\'x8\')'],
+['65A', 'Strong room (GF) — marking of RCC wall positions on floor', '05-Sep-2026', '05-Sep-2026', 1, 'Survey', '', '', '', 'Not Started', 'Mark all 4 wall center lines on floor slab; confirm 10\'x8\' clear internal dimensions', 'Ground Floor'],
+['65B', 'Strong room (GF) — RCC wall reinforcement cutting, bending (all 4 walls)', '05-Sep-2026', '06-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'RCC walls min 150mm thick all sides; Fe500 TMT as per structural drawing', 'Ground Floor'],
+['65C', 'Strong room (GF) — vertical bar placing & horizontal ring tying', '06-Sep-2026', '07-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'Both faces of wall; 40mm cover; cover blocks tied on outer bars', 'Ground Floor'],
+['65D', 'Strong room (GF) — shuttering both faces all 4 walls; squareness check', '06-Sep-2026', '08-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Plywood shuttering inner & outer face; ensure squareness before pour', 'Ground Floor'],
+['65E', 'Strong room (GF) — SE checklist filled before each pour', '09-Sep-2026', '09-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Before each pour; record reinforcement & shuttering details', 'Ground Floor'],
+['65F', 'Strong room (GF) — PM verification & sign-off before pour', '09-Sep-2026', '09-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'No casting without PM sign-off on strong room walls', 'Ground Floor'],
+['65G', 'Strong room (GF) — RCC wall casting (Day 1: 2 opposite walls)', '08-Sep-2026', '08-Sep-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'Pour opposite walls first; vibrator compaction; no cold joints', 'Ground Floor'],
+['65H', 'Strong room (GF) — RCC wall casting (Day 2: remaining 2 walls)', '09-Sep-2026', '09-Sep-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'Cast remaining 2 walls; same vibration protocol', 'Ground Floor'],
+['65I', 'Strong room (GF) — curing of RCC walls min 7 days wet curing', '09-Sep-2026', '16-Sep-2026', 8, 'Civil', '', '', '', 'Not Started', 'Wet gunny both faces; parallel to other Phase 6 works', 'Ground Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 7: GF ROOF BEAM & SLAB
+// ════════════════════════════════════════════════════════════
+['PHASE 7: GROUND FLOOR ROOF — BEAM & SLAB (SHUTTERING, TMT BAR, CASTING)'],
+[163, 'GF staircase — reinforcement cutting, bending & placement (GF to FF waist slab)', '05-Sep-2026', '07-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Waist slab reinforcement; steps form over slab; confirm angle with drawing', 'Ground Floor'],
+[164, 'GF staircase — shuttering for waist slab (inclined plywood on centering)', '06-Sep-2026', '08-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Inclined shuttering; supports at correct RL; check angle with drawing', 'Ground Floor'],
+[165, 'GF staircase — casting of waist slab & rough steps (GF to FF)', '08-Sep-2026', '08-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'M25 RCC; compact thoroughly; cure min 7 days; do not load before 7 days', 'Ground Floor'],
+[166, 'GF roof beam shuttering — prop/centering layout plan prepared before start', '09-Sep-2026', '09-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'SE to mark prop positions as per span; spacing max 1.0m c/c for slabs', 'Ground Floor'],
+[167, 'GF roof beam shuttering — centering/props erected for main beam bottom boards', '09-Sep-2026', '10-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Telescopic props on base plates/ledgers; level beam bottom to correct soffit RL', 'Ground Floor'],
+[168, 'GF roof beam shuttering — secondary joist/plank system over props for slab soffit', '10-Sep-2026', '11-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Cross joists at correct c/c; plywood slab shuttering fixed on joists; level check', 'Ground Floor'],
+[169, 'GF roof beam shuttering — side shuttering panels for all beams fixed & clamped', '12-Sep-2026', '12-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Side boards to correct beam depth; clamp with tie bolts; oil all panels', 'Ground Floor'],
+[170, 'GF roof beam shuttering — level check across entire slab (auto-level survey)', '12-Sep-2026', '12-Sep-2026', 1, 'Survey', '', '', '', 'Not Started', 'SE to take levels at grid points; max deviation ±5mm from design soffit RL', 'Ground Floor'],
+[171, 'GF roof — TMT bar (2nd lot) procurement & delivery to site', '05-Sep-2026', '08-Sep-2026', 4, 'Steel', '', '', '', 'Not Started', '2nd lot for beam & slab steel; check mill certificate; stack size-wise', 'Ground Floor'],
+[172, 'GF roof beam reinforcement — bottom bar cutting, bending & placing in beam shuttering', '10-Sep-2026', '11-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'Main bars + extra bars at mid-span; cover blocks placed; bars tied to stirrups', 'Ground Floor'],
+[173, 'GF roof beam reinforcement — stirrup placing & tying (beam cage assembly)', '11-Sep-2026', '12-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'All stirrups tied; 135-degree hooks alternate; no loose stirrups', 'Ground Floor'],
+[174, 'GF roof beam reinforcement — top bars placed & tied (full cage complete)', '12-Sep-2026', '12-Sep-2026', 1, 'Steel', '', '', '', 'Not Started', 'Top bars in beam + cranked bars at supports; cover verified', 'Ground Floor'],
+[175, 'GF roof slab reinforcement — bottom mesh cutting, placing & tying on slab shuttering', '12-Sep-2026', '13-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'Bottom mesh at correct spacing; cover blocks at 1.0m c/c across slab', 'Ground Floor'],
+[176, 'GF roof slab reinforcement — top mesh placing & tying (at supports over beams)', '13-Sep-2026', '14-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'Top mesh over beam supports (cantilever zones); chair bars to maintain level', 'Ground Floor'],
+[177, 'GF roof — electrical sleeve/conduit coordination (MEP mark-up review)', '13-Sep-2026', '13-Sep-2026', 1, 'Coordination', '', '', '', 'Not Started', 'Civil to coordinate openings only; confirm conduit dia & positions; MEP work excluded', 'Ground Floor'],
+[178, 'GF roof — plumbing sleeve positions confirmed & pipes/sleeves placed in slab', '13-Sep-2026', '14-Sep-2026', 2, 'Coordination', '', '', '', 'Not Started', 'Plumber to place sleeves; Civil to tie to reinforcement; size & position confirmed', 'Ground Floor'],
+[179, 'GF roof — SE pre-pour checklist filled (shuttering, steel, MEP sleeves, cover)', '14-Sep-2026', '14-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Comprehensive checklist; signed before PM inspection', 'Ground Floor'],
+[180, 'GF roof — PM verification of shuttering & steel checklist', '15-Sep-2026', '15-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM physical walk-through; countersigns checklist; RMC order given only after this', 'Ground Floor'],
+[181, 'GF roof — RMC order placed (quantity, mix, pump, timing confirmation)', '15-Sep-2026', '15-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Confirm quantity, pump truck, time of pour start; ensure no delay in RMC trucks', 'Ground Floor'],
+[182, 'GF roof slab & beam concrete casting (Slab No.1) — M25 RCC', '15-Sep-2026', '15-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Continuous pour; vibrator compaction; finishing team behind pump; no cold joints; pour in 1 day', 'Ground Floor'],
+[183, 'GF roof slab — slump test each truck; cube samples 3 per 10 cum', '15-Sep-2026', '15-Sep-2026', 1, 'Testing', '', '', '', 'Not Started', 'Continuous sampling; label cubes; dispatch within 24 hrs', 'Ground Floor'],
+[184, 'GF roof slab — surface finishing (floated & troweled level within ±5mm)', '15-Sep-2026', '15-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Screed rail finish; troweled before initial set; no surface water addition', 'Ground Floor'],
+[185, 'GF roof casting — SE checklist filled immediately after pour', '15-Sep-2026', '15-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Time, RMC trucks, slump readings, cube sample register', 'Ground Floor'],
+[186, 'GF roof casting — PM verification of casting checklist', '16-Sep-2026', '16-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM countersigns', 'Ground Floor'],
+[187, 'GF roof slab — curing: wet gunny bags spread on slab top within 4 hrs', '15-Sep-2026', '15-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Wet gunny immediately after initial set; ponding curing thereafter', 'Ground Floor'],
+[188, 'GF roof slab curing — ponding / wet curing (min 14 days)', '15-Sep-2026', '29-Sep-2026', 15, 'Civil', '', '', '', 'Not Started', 'Maintain water level on slab; do not allow slab to dry; parallel to FF column work', 'Ground Floor'],
+[189, 'GF roof slab — ceiling plaster (soffit) after de-shuttering', '20-Sep-2026', '24-Sep-2026', 5, 'Civil', '', '', '', 'Not Started', '12mm sand-cement plaster on slab soffit; parallel to FF column work', 'Ground Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 8: DE-SHUTTERING GF ROOF & FF SETOUT
+// ════════════════════════════════════════════════════════════
+['PHASE 8: DE-SHUTTERING GF ROOF & FIRST FLOOR (FF) SETOUT'],
+[190, 'GF roof — de-shutter beam side panels (after 3 days)', '18-Sep-2026', '18-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Beam sides after 3 days; tap gently; inspect surface; fill HCs', 'Ground Floor'],
+[191, 'GF roof — inspect beam & slab soffit for honeycombs, cracks after de-shuttering', '18-Sep-2026', '19-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Record all defects; minor HC filled with polymer grout; major HC → PM decision', 'Ground Floor'],
+[192, 'GF roof — de-shutter slab props (after min 14-18 days, partial props retained)', '29-Sep-2026', '29-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Partial props retained near mid-span until FF load transfer complete', 'Ground Floor'],
+[193, 'FF column — starter position survey & marking on GF roof slab', '17-Sep-2026', '17-Sep-2026', 1, 'Survey', '', '', '', 'Not Started', 'Re-establish grid lines on GF slab; mark all FF column centres; cross-check diagonals', 'First Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 9: FIRST FLOOR COLUMN WORK
+// ════════════════════════════════════════════════════════════
+['PHASE 9: FIRST FLOOR (FF) COLUMN WORK'],
+[194, 'FF column reinforcement — vertical bar cutting (12 ft height including laps)', '18-Sep-2026', '19-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', '12 ft floor height; min 40d lap with GF column bars; stagger laps', 'First Floor'],
+[195, 'FF column reinforcement — stirrup bending (IS 13920 ductile detailing)', '19-Sep-2026', '20-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'Confining stirrups in 2d zone; supplementary ties as per drawing', 'First Floor'],
+[196, 'FF column reinforcement — vertical bar lapping with GF column bars', '20-Sep-2026', '21-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'Lap length per structural; stagger laps in column section', 'First Floor'],
+[197, 'FF column reinforcement — stirrup threading & tying top to bottom', '21-Sep-2026', '22-Sep-2026', 2, 'Steel', '', '', '', 'Not Started', 'All stirrups tied; alternate binding direction for tie wires', 'First Floor'],
+[198, 'FF column reinforcement — cover blocks tied on all 4 faces', '22-Sep-2026', '22-Sep-2026', 1, 'Steel', '', '', '', 'Not Started', '25mm cover; min 3 blocks per metre height per face', 'First Floor'],
+[199, 'FF column reinforcement — SE checklist filled before shuttering', '22-Sep-2026', '22-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Bar dia, no., spacing, lap, cover, stirrup spacing checked', 'First Floor'],
+[200, 'FF column reinforcement — PM verification & sign-off', '23-Sep-2026', '23-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM physical inspection before shuttering', 'First Floor'],
+[201, 'FF column shuttering — panels fixed 3 sides, plumb checked', '22-Sep-2026', '23-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Oil panels; 3 sides first; plumb ±3mm tolerance', 'First Floor'],
+[202, 'FF column shuttering — 4th side fixed & all yokes tightened', '23-Sep-2026', '24-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'All yokes at 300mm c/c; pack gap at slab level with mortar; prop & brace', 'First Floor'],
+[203, 'FF column casting (zone-wise) — M25 RCC (4 zones over 4 days)', '25-Sep-2026', '28-Sep-2026', 4, 'Civil', '', '', '', 'Not Started', 'RMC through pump; 4 days zone-wise; vibrator at max 450mm lifts; mark date & time on each', 'First Floor'],
+[204, 'FF column casting — slump test & cube samples for each zone', '25-Sep-2026', '28-Sep-2026', 4, 'Testing', '', '', '', 'Not Started', 'Same protocol as GF; file all lab reports', 'First Floor'],
+[205, 'FF column casting — SE checklist filled same day as pour', '25-Sep-2026', '25-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Time, truck, slump, cube samples', 'First Floor'],
+[206, 'FF column casting — PM verification of casting checklist', '26-Sep-2026', '26-Sep-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to countersign; cube register updated', 'First Floor'],
+[207, 'FF column de-shuttering — remove shuttering 24 hrs after each zone', '26-Sep-2026', '27-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Inspect surface; fill HCs same day; mark date', 'First Floor'],
+[208, 'FF column — date & time marking after de-shuttering', '26-Sep-2026', '26-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Paint marker on column face', 'First Floor'],
+[209, 'FF column curing — wet gunny bags on all faces twice daily for 8 days', '26-Sep-2026', '04-Oct-2026', 9, 'Civil', '', '', '', 'Not Started', 'SE diary entry & photo update daily', 'First Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 10: FF BRICK MASONRY & LINTEL
+// ════════════════════════════════════════════════════════════
+['PHASE 10: FIRST FLOOR (FF) BRICK MASONRY & LINTEL'],
+[210, 'FF masonry — brick/block 2nd lot procurement', '23-Sep-2026', '26-Sep-2026', 4, 'Civil', '', '', '', 'Not Started', 'Confirm quantity from masonry BBS; quality check on arrival', 'First Floor'],
+[211, 'FF masonry — DPC at FF slab level on GF roof slab', '27-Sep-2026', '27-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', '20mm DPC (CM 1:2 + WP compound) on GF slab top below FF external walls', 'First Floor'],
+[212, 'FF external wall brick masonry — 9 inch (first 1m height)', '27-Sep-2026', '28-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Soak bricks; 1:6 CM mortar; plumb & level every 3 courses; toothing at T-junctions', 'First Floor'],
+[213, 'FF external wall brick masonry — 9 inch (1m to 2m height)', '28-Sep-2026', '30-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Continue; electrical conduit coordination; 2 masonry crews parallel', 'First Floor'],
+[214, 'FF external wall brick masonry — 9 inch (2m to lintel level)', '30-Sep-2026', '02-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Approach lintel level; door/window frames confirmed in position', 'First Floor'],
+[215, 'FF internal wall brick/block masonry — 4.5 inch partitions', '01-Oct-2026', '05-Oct-2026', 5, 'Civil', '', '', '', 'Not Started', 'Parallel to external; bond with toothing; plumb check each wall', 'First Floor'],
+[216, 'FF masonry — SE checklist filled', '05-Oct-2026', '05-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Plumb, level, mortar quality, bond, conduit chase documented', 'First Floor'],
+[217, 'FF masonry — PM verification of masonry checklist', '06-Oct-2026', '06-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Random wall inspection; PM countersign', 'First Floor'],
+[218, 'FF lintel — marking, reinforcement, shuttering (over door/window openings)', '06-Oct-2026', '07-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Min 150mm bearing each side; 2 bars top & bottom; stirrups at 150mm', 'First Floor'],
+[219, 'FF lintel beam casting & curing', '08-Oct-2026', '10-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'M25; vibrate; 3-day curing before de-shuttering; masonry above continues after', 'First Floor'],
+[220, 'FF masonry — courses above lintel up to beam soffit level', '11-Oct-2026', '13-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Final masonry courses; close openings; prepare for roof shuttering', 'First Floor'],
+
+// ─── FF STRONG ROOM ──────────────────────────────────────────
+['FF STRONG ROOM / LOCKER ROOM — RCC WALLS (10\'x8\')'],
+['100A', 'Strong room (FF) — marking of wall positions on FF slab', '06-Oct-2026', '06-Oct-2026', 1, 'Survey', '', '', '', 'Not Started', 'Confirm 10\'x8\' internal clear; mark center lines on slab', 'First Floor'],
+['100B', 'Strong room (FF) — RCC wall reinforcement cutting & bending (all 4 walls)', '06-Oct-2026', '08-Oct-2026', 3, 'Steel', '', '', '', 'Not Started', 'Same spec as GF strong room; Fe500; confirm from structural drawing', 'First Floor'],
+['100C', 'Strong room (FF) — vertical bar placing & horizontal ring tying', '07-Oct-2026', '08-Oct-2026', 2, 'Steel', '', '', '', 'Not Started', 'Both wall faces; 40mm cover; cover blocks tied', 'First Floor'],
+['100D', 'Strong room (FF) — shuttering both faces all 4 walls; squareness check', '08-Oct-2026', '09-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Plywood shuttering; squareness check before pour', 'First Floor'],
+['100E', 'Strong room (FF) — SE checklist filled before each pour', '10-Oct-2026', '10-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Before each pour; mandatory', 'First Floor'],
+['100F', 'Strong room (FF) — PM verification & sign-off before pour', '10-Oct-2026', '10-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Same protocol as GF strong room; no casting without PM sign-off', 'First Floor'],
+['100G', 'Strong room (FF) — RCC wall casting Day 1 (2 opposite walls) — M25 RCC', '09-Oct-2026', '09-Oct-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'Opposite walls first; vibrator compaction', 'First Floor'],
+['100H', 'Strong room (FF) — RCC wall casting Day 2 (remaining 2 walls)', '10-Oct-2026', '10-Oct-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'Same sequence as GF; vibrator compaction', 'First Floor'],
+['100I', 'Strong room (FF) — curing of RCC walls min 7 days wet curing', '10-Oct-2026', '17-Oct-2026', 8, 'Civil', '', '', '', 'Not Started', 'Parallel to other Phase 10 FF masonry works', 'First Floor'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 11: FF ROOF / TERRACE BEAM & SLAB
+// ════════════════════════════════════════════════════════════
+['PHASE 11: FIRST FLOOR ROOF / TERRACE — BEAM & SLAB (SHUTTERING, TMT BAR, CASTING)'],
+[221, 'FF staircase — shuttering, reinforcement & casting (FF to terrace level)', '05-Oct-2026', '08-Oct-2026', 4, 'Civil', '', '', '', 'Not Started', 'Waist slab inclined shuttering; M25; cure min 7 days', 'Mumty'],
+[222, 'Terrace roof beam shuttering — prop/centering layout plan prepared', '09-Oct-2026', '09-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'SE to mark prop positions; max spacing 1.0m c/c for slabs', 'Roof & Terrace'],
+[223, 'Terrace roof beam shuttering — props & centering erected for main beam bottom', '09-Oct-2026', '10-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Level beam bottom to correct soffit RL; check level with auto-level', 'Roof & Terrace'],
+[224, 'Terrace roof beam shuttering — secondary joist system & plywood slab shuttering', '10-Oct-2026', '12-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Cross joists; plywood; level check across full area', 'Roof & Terrace'],
+[225, 'Terrace roof beam shuttering — side shuttering panels for all beams fixed & clamped', '13-Oct-2026', '13-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Side boards; tie bolts; oil all panels before pour', 'Roof & Terrace'],
+[226, 'Terrace roof — auto-level survey of shuttering soffit levels', '13-Oct-2026', '13-Oct-2026', 1, 'Survey', '', '', '', 'Not Started', 'Grid level check; max deviation ±5mm from design soffit RL', 'Roof & Terrace'],
+[227, 'Terrace roof — TMT bar 3rd lot received & checked', '06-Oct-2026', '08-Oct-2026', 3, 'Steel', '', '', '', 'Not Started', '3rd lot for terrace beam & slab steel; mill cert check; stack size-wise', 'Roof & Terrace'],
+[228, 'Terrace roof beam reinforcement — bottom bars cutting, bending & placing', '11-Oct-2026', '12-Oct-2026', 2, 'Steel', '', '', '', 'Not Started', 'Main & extra bars; cover blocks; tie to stirrups', 'Roof & Terrace'],
+[229, 'Terrace roof beam reinforcement — stirrup tying & cage assembly', '12-Oct-2026', '13-Oct-2026', 2, 'Steel', '', '', '', 'Not Started', 'Complete cage; 135-degree hooks alternate; all joints tied', 'Roof & Terrace'],
+[230, 'Terrace roof beam reinforcement — top bars placed & tied', '13-Oct-2026', '13-Oct-2026', 1, 'Steel', '', '', '', 'Not Started', 'Top bars + cranked bars at supports; cover verified', 'Roof & Terrace'],
+[231, 'Terrace roof slab reinforcement — bottom mesh cutting, placing & tying', '13-Oct-2026', '14-Oct-2026', 2, 'Steel', '', '', '', 'Not Started', 'Bottom mesh; cover blocks at 1.0m c/c; check spacing', 'Roof & Terrace'],
+[232, 'Terrace roof slab reinforcement — top mesh placing & tying (at beam supports)', '14-Oct-2026', '15-Oct-2026', 2, 'Steel', '', '', '', 'Not Started', 'Top mesh over beam supports; chair bars for correct level', 'Roof & Terrace'],
+[233, 'Terrace roof — electrical & plumbing sleeve coordination (MEP mark-up)', '14-Oct-2026', '14-Oct-2026', 1, 'Coordination', '', '', '', 'Not Started', 'Civil to coordinate openings only; MEP work excluded', 'Roof & Terrace'],
+[234, 'Terrace roof — plumbing sleeves & pipes tied in slab before pour', '14-Oct-2026', '15-Oct-2026', 2, 'Coordination', '', '', '', 'Not Started', 'Plumber to place & tie; Civil to verify before concrete', 'Roof & Terrace'],
+[235, 'Terrace roof — SE pre-pour checklist filled', '15-Oct-2026', '15-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Comprehensive; shuttering, steel, sleeves, cover all checked', 'Roof & Terrace'],
+[236, 'Terrace roof — PM verification of shuttering & steel checklist', '16-Oct-2026', '16-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM walk-through; countersigns; RMC order after this', 'Roof & Terrace'],
+[237, 'Terrace roof — RMC order placed with quantity, pump & time confirmed', '16-Oct-2026', '16-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Confirm pump truck, time of pour start; no gap in RMC trucks', 'Roof & Terrace'],
+[238, 'Terrace roof slab & beam concrete casting — M25 RCC', '16-Oct-2026', '16-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Continuous pour; vibrator; no cold joints; surface float finish; pour in 1 day', 'Roof & Terrace'],
+[239, 'Terrace roof — slump test & cube samples during pour', '16-Oct-2026', '16-Oct-2026', 1, 'Testing', '', '', '', 'Not Started', '3 cubes per 10 cum; label; dispatch within 24 hrs', 'Roof & Terrace'],
+[240, 'Terrace roof — surface finishing after pour', '16-Oct-2026', '16-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Float & trowel; slope towards drain point if required by architect', 'Roof & Terrace'],
+[241, 'Terrace roof casting — SE checklist filled immediately after pour', '16-Oct-2026', '16-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Time, trucks, slump, cubes recorded', 'Roof & Terrace'],
+[242, 'Terrace roof casting — PM verification of casting checklist', '17-Oct-2026', '17-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM countersigns; cube register filed', 'Roof & Terrace'],
+[243, 'Terrace roof slab curing — wet gunny within 4 hrs; ponding curing min 14 days', '16-Oct-2026', '30-Oct-2026', 15, 'Civil', '', '', '', 'Not Started', 'Ponding curing; maintain water level; SE diary record daily', 'Roof & Terrace'],
+[244, 'Terrace roof — ceiling plaster (soffit of slab) — FF ceiling', '20-Oct-2026', '24-Oct-2026', 5, 'Civil', '', '', '', 'Not Started', '12mm sand-cement plaster on FF slab soffit', 'First Floor'],
+[245, 'Terrace roof — de-shutter beam sides after 3 days', '19-Oct-2026', '19-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Inspect beam soffit; fill HCs', 'Roof & Terrace'],
+[246, 'Terrace roof — de-shutter slab props after min 14 days', '31-Oct-2026', '31-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Remove props only after 14 days & lab 28-day results confirm strength', 'Roof & Terrace'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 12: PARAPET, STAIRCASE & MISC RCC
+// ════════════════════════════════════════════════════════════
+['PHASE 12: PARAPET, STAIRCASE & MISCELLANEOUS RCC WORK'],
+[247, 'Parapet wall — marking of parapet position & height on terrace slab', '20-Oct-2026', '20-Oct-2026', 1, 'Survey', '', '', '', 'Not Started', 'Mark parapet centerline; confirm height from architectural drawing', 'Roof & Terrace'],
+[248, 'Parapet wall — reinforcement cutting, bending & placing', '20-Oct-2026', '21-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'RCC parapet or brick parapet as per drawing; RCC column for brick parapet', 'Roof & Terrace'],
+[249, 'Parapet wall — shuttering fixed (if RCC) or brick masonry (if brick type)', '20-Oct-2026', '21-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Plumb check; level top of parapet to design height', 'Roof & Terrace'],
+[250, 'Parapet wall casting or masonry — M25 (if RCC) / 1:4 CM (if brick)', '21-Oct-2026', '22-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'As per structural; curing min 3 days', 'Roof & Terrace'],
+[251, 'Overhead water tank stand — RCC column/pedestal marking & reinforcement', '21-Oct-2026', '21-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'As per structural drawing; size & bearing capacity for OHT', 'Roof & Terrace'],
+[252, 'Overhead water tank stand — shuttering & RCC casting (M25)', '21-Oct-2026', '22-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Compact; cure 7 days; no OHT placed before 28-day strength confirmed', 'Roof & Terrace'],
+[253, 'Sunshade/chajja — marking of chajja position over all external openings GF & FF', '21-Oct-2026', '21-Oct-2026', 1, 'Survey', '', '', '', 'Not Started', 'Mark chajja edge line; confirm projection from drawing', 'Ground Floor'],
+[254, 'Sunshade/chajja — reinforcement cutting, bending & placing', '21-Oct-2026', '22-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Cantilever slab reinforcement; top bars extended into wall; cover blocks', 'Ground Floor'],
+[255, 'Sunshade/chajja — shuttering below chajja; temporary props', '21-Oct-2026', '22-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Inclined shuttering; supports at edge; oil before pour', 'Ground Floor'],
+[256, 'Sunshade/chajja casting — M25 RCC (all GF & FF openings in one go)', '22-Oct-2026', '22-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Compact; 7-day curing; do not remove props for 7 days', 'Ground Floor'],
+[257, 'Staircase — waist slab finishing steps (rough RCC steps cast over waist slab)', '19-Oct-2026', '20-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'RCC rough steps as kickers for final stone/marble; step height & tread confirmed', 'Mumty'],
+[258, 'Mumty / staircase head room — RCC slab for mumty roof', '20-Oct-2026', '22-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Small slab over staircase head; M25; same casting & curing protocol', 'Mumty'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 12B: CHOKHAT (DOOR/WINDOW FRAMES) — FIXING
+// ════════════════════════════════════════════════════════════
+['PHASE 12B: CHOKHAT (DOOR/WINDOW FRAMES) — BIJOLIYA — FIXING & REPAIR'],
+['119A', 'Chokhat — material received from owner (Mr. Bharat Ji Jain); unloading & inspection', '12-Oct-2026', '12-Oct-2026', 1, 'Civil / Owner Coordination', '', '', '', 'Not Started', 'SE to check quantity vs drawing door/window schedule; damaged frames reported immediately', 'General'],
+['119B', 'Chokhat — sorting: match frame size to opening as per door/window schedule', '12-Oct-2026', '13-Oct-2026', 2, 'Carpentry / Civil', '', '', '', 'Not Started', 'Tag each frame with room name & opening reference number', 'General'],
+['119C', 'Chokhat — repair: damaged ends, cracks, warping correction (carpentry & masonry)', '12-Oct-2026', '14-Oct-2026', 3, 'Carpentry / Civil', '', '', '', 'Not Started', 'Repair cracked/chipped frames; epoxy/cement mortar; no damaged frame fixed without PM approval', 'General'],
+['119D', 'Chokhat — anti-termite / wood preservative treatment on all ends (bottom 12 inches)', '14-Oct-2026', '14-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Chemical treatment on wood ends before embedding; client to supply or approve product', 'General'],
+['119E', 'Chokhat — fixing of GF door frames in position; plumb, level & braced with props', '15-Oct-2026', '16-Oct-2026', 2, 'Carpentry / Civil', '', '', '', 'Not Started', 'Fix before final masonry courses around opening; brace with ballies until mortar sets', 'Ground Floor'],
+['119F', 'Chokhat — fixing of FF door frames in position; plumb, level & braced', '15-Oct-2026', '16-Oct-2026', 2, 'Carpentry / Civil', '', '', '', 'Not Started', 'Fix before final masonry around opening; same protocol as GF', 'First Floor'],
+['119G', 'Chokhat — grouting / haunching of frame ends into wall (CM 1:3; 48-hr setting)', '17-Oct-2026', '18-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Haunching both GF & FF frames; do not disturb bracing for min 48 hrs', 'General'],
+['119H', 'Chokhat — alignment final check by SE (plumb, diagonal & level recorded)', '19-Oct-2026', '19-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'SE to record measurements; any frame out of plumb >3mm to be re-done before plaster', 'General'],
+['119I', 'Chokhat — alignment final check verified by PM', '19-Oct-2026', '19-Oct-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to countersign SE chokhat checklist; same tolerance ±3mm', 'General'],
+['119J', 'Chokhat — final touch-up after plaster (filling gaps, cement finish at junction)', '22-Nov-2026', '23-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'Post-plaster sealant / cement finish at chokhat–wall junction; no gaps before handover', 'General'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 13: INTERNAL & EXTERNAL PLASTER WORK
+// ════════════════════════════════════════════════════════════
+['PHASE 13: INTERNAL & EXTERNAL PLASTER WORK'],
+[259, 'Plaster — sample panel approval by client/PM (internal & external finishes)', '10-Sep-2026', '10-Sep-2026', 1, 'Civil', '', '', '', 'Not Started', 'Two sample panels (internal & external); approved before bulk plaster starts', 'General'],
+[260, 'Plaster — surface preparation: hacking of all RCC column & beam surfaces (peel-off finish)', '20-Oct-2026', '22-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Hacking to create key for plaster; 25mm depth; all column & beam faces hacked', 'General'],
+[261, 'Plaster — surface preparation: wire mesh (chicken mesh) fixed at RCC–brick junctions', '22-Oct-2026', '24-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Galvanized wire mesh 100mm wide at all beam-wall & column-wall junctions; prevents crack', 'General'],
+[262, 'Plaster — surface preparation: fill cracks & hollows in brick masonry with CM mortar', '23-Oct-2026', '24-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Rake mortar joints; apply CM 1:4 to depressions; allow to dry before plaster', 'General'],
+[263, 'Plaster — surface preparation: clean all surfaces (remove dust, loose mortar, stains)', '24-Oct-2026', '24-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', 'Brush & air-blast all surfaces; wet surface before plaster', 'General'],
+[264, 'External wall plaster — fix dot & dado (plaster gauge squares) for thickness control', '23-Oct-2026', '24-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', '12mm thickness dots on external face; level & plumb checked; set 1.0m grid', 'General'],
+[265, 'External wall plaster — GF external rough coat (scratch coat) — 12mm first coat', '23-Oct-2026', '25-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'CM 1:4; scratch coat; work from top of wall down; start from GF', 'General'],
+[266, 'External wall plaster — FF external rough coat (scratch coat) — 12mm first coat', '23-Oct-2026', '26-Oct-2026', 4, 'Civil', '', '', '', 'Not Started', 'Parallel with GF using 2 crews; 2 scaffold levels; 3 plaster crews total', 'General'],
+[267, 'External wall plaster — GF external finish coat — 6mm second coat (smooth finish)', '26-Oct-2026', '27-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'CM 1:3 finish coat; smooth trowel finish as approved sample', 'General'],
+[268, 'External wall plaster — FF external finish coat — 6mm second coat', '27-Oct-2026', '28-Oct-2026', 2, 'Civil', '', '', '', 'Not Started', 'Same finish; check level & plumb of all external corners with aluminium ruler', 'General'],
+[269, 'External plaster — curing (min 7 days, 2 times daily wet curing)', '26-Oct-2026', '04-Nov-2026', 10, 'Civil', '', '', '', 'Not Started', 'Wet curing both GF & FF external; do not paint before curing complete', 'General'],
+[270, 'Internal wall plaster — GF: fix dots & dado for internal plaster thickness', '24-Oct-2026', '24-Oct-2026', 1, 'Civil', '', '', '', 'Not Started', '12mm internal plaster dots; plumb & level; set grid on all internal walls', 'Ground Floor'],
+[271, 'Internal wall plaster — GF internal walls (all rooms, 12mm CM 1:4)', '24-Oct-2026', '30-Oct-2026', 7, 'Civil', '', '', '', 'Not Started', 'Parallel crew; internal team; work from top of wall to bottom; internal smooth finish', 'Ground Floor'],
+[272, 'GF bathroom flooring — base screed / waterproofing bed (before plumber rough-in)', '30-Oct-2026', '30-Oct-2026', 1, 'Civil / Coordination', '', '', '', 'Not Started', '⚠ DEPENDENCY: GF bathroom base screed → Plumber rough-in (MEP scope). Civil to hand over GF bathrooms only after floor base is set and cured.', 'Ground Floor'],
+[273, 'Internal wall plaster — FF internal walls (all rooms, 12mm CM 1:4)', '31-Oct-2026', '06-Nov-2026', 7, 'Civil', '', '', '', 'Not Started', 'Parallel internal plaster crew; accelerated schedule', 'First Floor'],
+[274, 'FF bathroom flooring — base screed / waterproofing bed (before plumber rough-in)', '06-Nov-2026', '06-Nov-2026', 1, 'Civil / Coordination', '', '', '', 'Not Started', '⚠ DEPENDENCY: FF bathroom base screed → Plumber rough-in FF (MEP scope). Civil to hand over FF bathrooms only after cured.', 'First Floor'],
+[275, 'GF ceiling plaster (soffit of GF slab) — 12mm CM 1:4', '20-Sep-2026', '24-Sep-2026', 5, 'Civil', '', '', '', 'Not Started', 'Bonding agent/primer on RCC soffit before plaster; overhead work; safety harness required', 'Ground Floor'],
+[276, 'FF ceiling plaster (soffit of FF slab) — 12mm CM 1:4', '20-Oct-2026', '24-Oct-2026', 5, 'Civil', '', '', '', 'Not Started', 'Same protocol as GF ceiling; bonding agent on RCC soffit', 'First Floor'],
+[277, 'Plaster — window sill plaster & sill slope (10mm drop to outside)', '05-Nov-2026', '07-Nov-2026', 3, 'Civil', '', '', '', 'Not Started', 'CM 1:3 sill; slope outward; projecting sill edge with drip groove', 'General'],
+[278, 'Plaster — external corners (arrises) finished with metal angle bead (all corners)', '23-Oct-2026', '28-Oct-2026', 6, 'Civil', '', '', '', 'Not Started', 'Fix galvanized metal angle bead at all external corners before finish coat; prevents chipping', 'General'],
+[279, 'Plaster — parapet internal & external face plaster', '23-Oct-2026', '25-Oct-2026', 3, 'Civil', '', '', '', 'Not Started', 'Parapet top coping with slope outward; coping drip groove; waterproof CM', 'Roof & Terrace'],
+[280, 'Plaster — SE checklist filled (all zones complete, thickness checked)', '07-Nov-2026', '07-Nov-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Plaster thickness check with nail; record all room/zone completion', 'General'],
+[281, 'Plaster — PM verification of plaster checklist', '08-Nov-2026', '08-Nov-2026', 1, 'Checklist', '', '', '', 'Not Started', 'PM to physically check random rooms; countersign', 'General'],
+[282, 'Plaster — curing of all plaster surfaces min 7 days water curing', '07-Nov-2026', '14-Nov-2026', 8, 'Civil', '', '', '', 'Not Started', 'Both internal & external; SE to record daily curing in site diary', 'General'],
+[283, 'Plaster — patch repair and rectification of cracks & defects', '15-Nov-2026', '16-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'PM to prepare list of defects; all cracks to be cut, filled & re-plastered', 'General'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 14: SITE CLEANUP, INSPECTION & HANDOVER
+// ════════════════════════════════════════════════════════════
+['PHASE 14: SITE CLEANUP, INSPECTION & HANDOVER'],
+[284, 'Site cleanup — remove all construction debris from inside building (all floors)', '17-Nov-2026', '17-Nov-2026', 1, 'Civil', '', '', '', 'Not Started', 'Sweep all floors; remove mortar droppings, brick pieces, wire offcuts', 'General'],
+[285, 'Site cleanup — dismantle all internal scaffolding & temporary props', '17-Nov-2026', '17-Nov-2026', 1, 'Civil', '', '', '', 'Not Started', 'Remove all ballies & planks; stack for dispatch; clean floor area below', 'General'],
+[286, 'Site cleanup — external scaffolding dismantling (after external plaster cured)', '17-Nov-2026', '18-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'Dismantle from top floor down; stack scaffold material; patch any anchor holes in wall', 'General'],
+[287, 'Site cleanup — remove all material stocks, excess bars, timber, debris from plot', '17-Nov-2026', '18-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'Clear entire plot; dispose off-site; client to be informed before disposal of any reusable material', 'General'],
+[288, 'Site cleanup — clean roof / terrace surface (remove debris, standing water)', '17-Nov-2026', '18-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'Ensure drainage point is open; no ponding on terrace after work', 'General'],
+[289, 'Final inspection — SE walks through all rooms, records punch list items', '18-Nov-2026', '19-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'Punch list: honeycombs, cracks, plaster defects, HCs in columns, missing items', 'General'],
+[290, 'Final inspection — joint structural & civil work inspection with client & architect', '19-Nov-2026', '19-Nov-2026', 1, 'Inspection', '', '', '', 'Not Started', 'Mr. Bharat Ji Jain / Ar. Kshitiz Manu; full walkthrough of all floors', 'General'],
+[291, 'Snag list — formal snag list prepared after client inspection', '19-Nov-2026', '19-Nov-2026', 1, 'Documentation', '', '', '', 'Not Started', 'All defects listed with room & location; SE & PM sign; issued to client', 'General'],
+[292, 'Snag list — rectification of all items on snag list', '19-Nov-2026', '22-Nov-2026', 4, 'Civil', '', '', '', 'Not Started', 'All snag items to be closed before handover certificate; SE to sign-off each item', 'General'],
+[293, 'Snag list — second inspection post rectification (client or PM)', '23-Nov-2026', '23-Nov-2026', 1, 'Inspection', '', '', '', 'Not Started', 'Confirm all snag items closed; client sign-off on snag register', 'General'],
+[294, 'Chokhat final touch-up — gaps filled, junction cement finish', '22-Nov-2026', '23-Nov-2026', 2, 'Civil', '', '', '', 'Not Started', 'Seal all frame–wall junctions; no visible gap anywhere at handover', 'General'],
+[295, 'Documentation — as-built drawings marked up by SE (any site deviations noted)', '20-Nov-2026', '25-Nov-2026', 6, 'Documentation', '', '', '', 'Not Started', 'SE to mark deviations on working drawings; submit to PM & client', 'General'],
+[296, 'Documentation — concrete cube test lab reports compiled & filed', '20-Nov-2026', '25-Nov-2026', 6, 'Documentation', '', '', '', 'Not Started', 'All 7-day & 28-day cube reports in one file per structural element; submit to client', 'General'],
+[297, 'Documentation — site diary compilation & handover binder prepared', '25-Nov-2026', '28-Nov-2026', 4, 'Documentation', '', '', '', 'Not Started', 'Site diary, photo log, checklist file, cube reports, material test certificates in one binder', 'General'],
+[298, 'Final handover — structure & civil work (footing to plaster) handed to client', '29-Nov-2026', '29-Nov-2026', 1, 'Handover', '', '', '', 'Not Started', 'Ready for MEP & finishing contractors; key handover; formal handover certificate signed', 'General'],
+[299, 'Final project handover — all works including outer works complete', '31-Dec-2026', '31-Dec-2026', 1, 'Handover', '', '', '', 'Not Started', '~6 Months | Building: 01-Jul→29-Nov-2026 | Outer Works: 06-Jul→30-Sep-2026 | FINAL: 31-Dec-2026 | Client: Mr. Bharat Ji Jain', 'General'],
+
+// ════════════════════════════════════════════════════════════
+// PHASE 15: OUTER / EXTERNAL WORKS
+// ════════════════════════════════════════════════════════════
+['═══  PHASE 15: OUTER / EXTERNAL WORKS  (Parallel from 06-Jul-2026 | ALL Tank & Outer RCC: Jul–Sep 2026 | NO Outer RCC in Oct/Nov/Dec | Outer Complete: 30-Sep-2026)  ═══'],
+['PHASE 15.1 — SITE PREPARATION & OUTER AREA EXCAVATION'],
+['O-01', 'Outer area setting out — boundary wall line, tank positions, guard room, road levels marked', '06-Jul-2026', '07-Jul-2026', 2, 'Survey', '', '', '', 'Not Started', 'As per layout / site plan by Ar. Kshitiz Manu; confirm setback before excavation; PARALLEL with Phase 2', 'General'],
+['O-02', 'Outer area — excavation for boundary wall footings (outer perimeter) — machine cut', '07-Jul-2026', '09-Jul-2026', 3, 'Excavation', '', '', '', 'Not Started', 'Machine + manual; depth as per structural; drain slope to be maintained', 'General'],
+['O-03', 'Outer area — manual dressing of boundary wall footing trenches', '09-Jul-2026', '10-Jul-2026', 2, 'Excavation', '', '', '', 'Not Started', 'Trim to exact size; remove loose soil; compact base', 'General'],
+['O-04', 'Outer area — excavation for underground tanks (UG water tank, fire tank, casting tank, PIT)', '07-Jul-2026', '11-Jul-2026', 5, 'Excavation', '', '', '', 'Not Started', 'Per layout PDF; machine + manual; PARALLEL with main building Phase 2 excavation', 'General'],
+['O-05', 'Outer area — excavation for guard room footing & drain / sump pits', '08-Jul-2026', '09-Jul-2026', 2, 'Excavation', '', '', '', 'Not Started', 'Guard room near gate; confirm position with layout', 'General'],
+['O-06', 'Outer area — anti-termite treatment to all outer excavations before PCC', '10-Jul-2026', '10-Jul-2026', 1, 'Civil', '', '', '', 'Not Started', 'Chemical treatment; material by client; record in SE checklist', 'General'],
+
+['PHASE 15.2 — UNDERGROUND TANKS — RCC (NO BRICK WORK IN ANY TANK)'],
+['O-07', 'UG Tanks — PCC (1:4:8) bed for all underground tanks (100-150mm)', '11-Jul-2026', '12-Jul-2026', 2, 'Civil/RMC', '', '', '', 'Not Started', 'Level & cure before RCC works; RCC M25 throughout — ALL TANKS: RCC WALLS ONLY — NO BRICK IN ANY TANK', 'General'],
+['O-08', 'Casting Tank — RCC wall & slab reinforcement (cutting, bending, binding)', '13-Jul-2026', '16-Jul-2026', 4, 'Steel', '', '', '', 'Not Started', 'Casting tank (ref layout left wing); RCC walls min 200mm; waterproof M25; NO BRICK — RCC walls only', 'General'],
+['O-09', 'Casting Tank — shuttering (inner & outer face, base slab)', '16-Jul-2026', '18-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Waterproof plywood shuttering; no leakage joints; inner & outer face shuttering', 'General'],
+['O-10', 'Casting Tank — RCC casting M25 with waterproofing admixture', '19-Jul-2026', '19-Jul-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'Integral WP compound in mix; continuous pour; vibrator; curing min 14 days', 'General'],
+['O-11', 'Casting Tank — curing (min 14 days ponding; both faces wet)', '19-Jul-2026', '02-Aug-2026', 14, 'Civil', '', '', '', 'Not Started', 'Mark curing start date on tank wall; record daily in diary', 'General'],
+['O-12', 'UG Water Tank — RCC wall & base slab reinforcement', '20-Jul-2026', '23-Jul-2026', 4, 'Steel', '', '', '', 'Not Started', 'Ref layout — water tank symbol; M25 WPC; RCC walls only — NO brick; confirm capacity & dims with architect', 'General'],
+['O-13', 'UG Water Tank — shuttering (inner & outer face)', '23-Jul-2026', '25-Jul-2026', 3, 'Civil', '', '', '', 'Not Started', 'Waterproof shuttering; check vertical alignment; no gaps at base', 'General'],
+['O-14', 'UG Water Tank — RCC casting M25 WPC; continuous pour', '25-Jul-2026', '25-Jul-2026', 1, 'Civil/RMC', '', '', '', 'Not Started', 'M25 WPC; vibrator at 450mm lifts; curing min 14 days', 'General'],
+['O-15', 'UG Water Tank — cover slab reinforcement, shuttering & casting', '26-Jul-2026', '27-Jul-2026', 2, 'Civil/RMC', '', '', '', 'Not Started', 'Cover slab with manhole opening; M25; integral WP compound; curing 14 days', 'General'],
+['O-16', 'Fire Tank(s) — RCC reinforcement, shuttering & casting (M25 WPC)', '21-Jul-2026', '25-Jul-2026', 5, 'Civil/RMC', '', '', '', 'Not Started', 'Ref layout — fire tank area at lower section; M25 WPC; RCC walls only — NO brick; confirm no. of tanks & sizes', 'General'],
+['O-17', 'PIT — RCC base & walls reinforcement, shuttering & casting', '24-Jul-2026', '26-Jul-2026', 3, 'Civil/RMC', '', '', '', 'Not Started', 'Ref layout — PIT near lower centre; M25 RCC; RCC walls — NO brick; confirm with MEP/architect', 'General'],
+['O-18', 'Recovery Tank (right wing) — RCC base & wall reinforcement, shuttering & casting', '26-Jul-2026', '29-Jul-2026', 4, 'Civil/RMC', '', '', '', 'Not Started', 'Ref layout — recovery tank right side; RCC walls M25 WPC; NO BRICK; curing min 14 days', 'General'],
+['O-19', 'Septic Tank (right lower corner) — RCC walls, base & cover slab (M25 WPC)', '28-Jul-2026', '31-Jul-2026', 4, 'Civil/RMC', '', '', '', 'Not Started', 'Ref layout — septic tank lower right; RCC only (NOT brick); cover slab with manhole; proper inlet/outlet slope', 'General'],
+['O-20', 'Tank checklist — all tanks: SE fills reinforcement + casting checklist; PM verifies', '19-Jul-2026', '19-Jul-2026', 1, 'Checklist', '', '', '', 'Not Started', 'Mandatory before each tank pour; cube samples taken for all tanks; rolling checklist per tank', 'General'],
+['O-21', 'Curing of all RCC tanks — min 14 days ponding / wet curing', '19-Jul-2026', '07-Aug-2026', 20, 'Civil', '', '', '', 'Not Started', 'All tanks parallel curing; mark curing start date on each tank wall; ALL TANK WORK COMPLETE BEFORE OCTOBER', 'General'],
+['O-22', 'Water tightness / leakage test — fill all tanks with water for 24 hrs; check seepage', '07-Aug-2026', '08-Aug-2026', 2, 'Civil / Inspection', '', '', '', 'Not Started', 'Client & PM to witness water test; any seepage rectified with crystalline WP before backfill; COMPLETE BY AUG-2026', 'General'],
+
+['PHASE 15.3 — UNDERGROUND PUMP ROOM (RCC WITH STAIRCASE)'],
+['O-23', 'UG Pump Room — marking of pump room position & size on site', '11-Jul-2026', '11-Jul-2026', 1, 'Survey', '', '', '', 'Not Started', 'Ref layout — "Underground Pump Room required with Staircase"; confirm room size with architect', 'General'],
+['O-24', 'UG Pump Room — RCC wall reinforcement (footing to top slab)', '11-Jul-2026', '14-Jul-2026', 4, 'Steel', '', '', '', 'Not Started', 'RCC walls; parallel with tank excavation', 'General'],
+['O-25', 'UG Pump Room — shuttering & RCC casting M25 (walls + cover slab)', '14-Jul-2026', '17-Jul-2026', 4, 'Civil/RMC', '', '', '', 'Not Started', 'Include staircase within pump room; cover slab with maintenance hatch; RCC only — no brick', 'General'],
+['O-26', 'UG Pump Room staircase — RCC waist slab & steps casting', '18-Jul-2026', '20-Jul-2026', 3, 'Civil/RMC', '', '', '', 'Not Started', 'Access staircase to pump room; handrail provision (MEP/finish scope)', 'General'],
+['O-27', 'UG Pump Room — curing of all RCC works min 14 days', '14-Jul-2026', '28-Jul-2026', 15, 'Civil', '', '', '', 'Not Started', 'Parallel with tank curing; pump room RCC complete before Oct', 'General'],
+
+['PHASE 15.4 — OUTER BOUNDARY WALL & GUARD ROOM'],
+['O-28', 'Boundary wall — PCC footing base (all around outer perimeter, 1:4:8, 100-150mm)', '10-Jul-2026', '11-Jul-2026', 2, 'Civil', '', '', '', 'Not Started', 'PCC bed for BW footings; confirm perimeter length from layout (66\'7" x 114\'6" approx)', 'General'],
+['O-29', 'Boundary wall — RCC footing casting (strip/isolated as per structural, M25)', '12-Jul-2026', '13-Jul-2026', 2, 'Civil/RMC', '', '', '', 'Not Started', 'RCC M25 footings; curing 7 days before wall above', 'General'],
+['O-30', 'Boundary wall — curing of BW footings (7 days)', '12-Jul-2026', '19-Jul-2026', 7, 'Civil', '', '', '', 'Not Started', 'Wet curing; do not start masonry before 7 days', 'General'],
+['O-31', 'Boundary wall — gate pillar RCC column reinforcement, shuttering & casting', '20-Jul-2026', '22-Jul-2026', 3, 'Civil/RMC', '', '', '', 'Not Started', 'Gate pillar RCC columns; confirm pillar size & height from architectural drawing', 'General'],
+['O-32', 'Boundary wall — brick masonry construction (full perimeter, 9 inch)', '20-Jul-2026', '30-Jul-2026', 11, 'Civil', '', '', '', 'Not Started', '9-inch brick BW; bond into gate pillar columns; confirm wall height & coping from architect', 'General'],
+['O-33', 'Boundary wall — RCC coping / top beam casting (all around top of BW)', '31-Jul-2026', '01-Aug-2026', 2, 'Civil/RMC', '', '', '', 'Not Started', 'Coping beam on top of BW; M25; prevents water ingress; drip groove at edge; curing 7 days', 'General'],
+['O-34', 'Boundary wall — external plaster (outer face) — 12mm sand-cement', '09-Aug-2026', '14-Aug-2026', 6, 'Civil', '', '', '', 'Not Started', 'Outer face plaster; allow curing; match main building plaster finish; complete before Sep', 'General'],
+['O-35', 'Guard Room — RCC footing, column, beam & roof slab (standalone structure)', '25-Jul-2026', '04-Aug-2026', 11, 'Civil/RMC', '', '', '', 'Not Started', 'Guard room near entrance gate per layout; RCC structure; size confirmed; floor finish by client', 'General'],
+['O-36', 'Guard Room — brick masonry walls', '05-Aug-2026', '08-Aug-2026', 4, 'Civil', '', '', '', 'Not Started', 'Brick walls after RCC columns set; 9-inch walls', 'General'],
+['O-37', 'Guard Room — plaster (internal + external, 12mm sand-cement)', '09-Aug-2026', '13-Aug-2026', 5, 'Civil', '', '', '', 'Not Started', 'Both faces; curing 7 days; COMPLETE BEFORE SEP-2026', 'General'],
+
+['PHASE 15.5 — EXTERNAL AREA, DRAINAGE & APPROACH'],
+['O-38', 'External area — PCC / approach path base within plot (outside building)', '01-Sep-2026', '06-Sep-2026', 6, 'Civil', '', '', '', 'Not Started', 'PCC hardstanding in service/approach zones; confirm extent with layout', 'General'],
+['O-39', 'External area — surface drain / rainwater drain channels around building & tanks', '04-Sep-2026', '09-Sep-2026', 6, 'Civil', '', '', '', 'Not Started', 'Drain slope toward sump / municipal outfall; confirm drain sizes; stormwater management', 'General'],
+['O-40', 'External area — compressor area & gas bank area base slab & anchor bolts (GF level)', '08-Sep-2026', '10-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Ref layout — compressor & gas bank (top right, LVL+2\'-0"); M25 base slab; anchor bolt positions per equipment', 'General'],
+['O-41', 'External area — meter room / DG room base slab & access path', '10-Sep-2026', '12-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Ref layout — meter room, DG set area lower section; M25 base slab; cable trench if required by MEP', 'General'],
+['O-42', 'External area — boring point pit — RCC protection ring & cover slab', '12-Sep-2026', '13-Sep-2026', 2, 'Civil', '', '', '', 'Not Started', 'Ref layout — boring point marked; RCC ring to protect bore casing; cast iron cover; Civil scope only', 'General'],
+
+['PHASE 15.6 — OUTER WORKS COMPLETION, INSPECTION & FINAL HANDOVER'],
+['O-43', 'Outer area — site cleanup (debris, shuttering material, construction waste removal)', '20-Sep-2026', '22-Sep-2026', 3, 'Civil', '', '', '', 'Not Started', 'Full site cleanup outer area; remove all temporary stores, labour sheds after outer works complete', 'General'],
+['O-44', 'Joint inspection — outer works with client (Mr. Bharat Ji Jain) & architect (Ar. Kshitiz Manu)', '23-Sep-2026', '23-Sep-2026', 1, 'Inspection', '', '', '', 'Not Started', 'Tank water tightness, boundary wall, guard room, pump room all checked; ALL outer RCC confirmed done before Oct', 'General'],
+['O-45', 'Snag list — outer works rectification', '24-Sep-2026', '27-Sep-2026', 4, 'Civil', '', '', '', 'Not Started', 'All outer works snag items to be closed before 30-Sep-2026', 'General'],
+['O-46', 'OUTER WORKS COMPLETE — formal handover of all outer works', '30-Sep-2026', '30-Sep-2026', 1, 'Handover', '', '', '', 'Not Started', 'OUTER WORKS COMPLETE: 30-Sep-2026 (NO tank/outer RCC work in Oct/Nov/Dec) | Building handover: 29-Nov-2026 | FINAL: 31-Dec-2026 | Client: Mr. Bharat Ji Jain', 'General'],
+];
+
+// ─── Build Workbook ───────────────────────────────────────
+const wb = XLSX.utils.book_new();
+
+// ─── Sheet 1: Project Schedule ────────────────────────────
+const wsData = [];
+
+// Title rows
+wsData.push(['OMJI CONSTRUCTION']);
+wsData.push(['PROJECT SCHEDULE / WORK PLAN - STRUCTURE & CIVIL WORK (FOOTING TO PLASTER) — DETAILED v10']);
+wsData.push(['Proposed Commercial Building (G+1) | Sitapura, Jaipur, Rajasthan']);
+wsData.push([]);
+wsData.push(['Client:', 'Mr. Bharat Ji Jain', null, null, null, null, 'Contractor:', 'Omji Construction']);
+wsData.push(['Project Location:', 'Sitapura, Jaipur, Rajasthan', null, null, null, null, 'Scope of Work:', 'Civil & Structure - Footing to Plaster']);
+wsData.push(['Building Type:', 'G+1 Commercial (Floor Height: 12\'-0" each)', null, null, null, null, 'Contract Duration:', '~6 Months | Building: 01-Jul→29-Nov-2026 | Outer Works (All Tanks, BW, Guard Room): 06-Jul→30-Sep-2026 | Final Handover: 31-Dec-2026']);
+wsData.push(['Approx. Footprint Area:', '54\'-0" x 99\'-0" (~5,346 Sq.Ft per floor, within setback line)', null, null, null, null, 'Working Schedule:', '7 Days / Week']);
+wsData.push(['Project Start Date:', '01-Jul-2026', null, null, null, null, 'Project End Date:', '31-Dec-2026']);
+wsData.push([]);
+wsData.push(HEADERS);
+
+// Add tasks
+for (const row of tasks) {
+  if (row.length === 1) {
+    // Phase header
+    wsData.push([row[0]]);
+  } else {
+    wsData.push(row);
+  }
+}
+
+const ws1 = XLSX.utils.aoa_to_sheet(wsData);
+
+// Set column widths
+ws1['!cols'] = [
+  { wch: 8 },   // Task No
+  { wch: 80 },  // Activity Description
+  { wch: 14 },  // Start Date
+  { wch: 14 },  // Finish Date
+  { wch: 10 },  // Duration
+  { wch: 22 },  // Trade
+  { wch: 14 },  // Actual Start
+  { wch: 14 },  // Actual Finish
+  { wch: 10 },  // Delay
+  { wch: 14 },  // Status
+  { wch: 70 },  // Remarks
+  { wch: 16 },  // Zone
+];
+
+XLSX.utils.book_append_sheet(wb, ws1, 'Project Schedule');
+
+// ─── Write file ───────────────────────────────────────────
+XLSX.writeFile(wb, 'Omji_Construction_ProjectSchedule_v10.xlsx');
+console.log('Done! Omji_Construction_ProjectSchedule_v10.xlsx created with', wsData.length, 'rows.');
