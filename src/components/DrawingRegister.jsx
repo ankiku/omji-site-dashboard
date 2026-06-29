@@ -289,60 +289,55 @@ export default function DrawingRegister({ projectId, canEdit, project }) {
           <div className="section-header">
             <h2 className="section-title" style={{ fontSize: '0.85rem' }}>{type} ({docs.length})</h2>
           </div>
-          {docs.map(d => (
-            <div key={d.id} className="drawing-card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '14px', background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', marginBottom: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px' }}>
-                <div className="drawing-card-left" style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+            {docs.map(d => (
+              <div 
+                key={d.id} 
+                className="drawing-card" 
+                onClick={() => handleViewFile(d)}
+                style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', cursor: 'pointer', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'transform 0.15s, box-shadow 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = 'var(--shadow-md)'; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+              >
+                <div style={{ height: '140px', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '1px solid var(--hairline)' }}>
                   {d.fileUrl && d.fileUrl.startsWith('data:image') ? (
-                    <div className="drawing-thumb" style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden' }}>
-                      <img src={d.fileUrl} alt={d.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
+                    <img src={d.fileUrl} alt={d.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <div className="drawing-thumb drawing-thumb-doc" style={{ width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--paper-2)', borderRadius: '4px', fontSize: '1.2rem' }}>📄</div>
+                    <div style={{ fontSize: '3.5rem', opacity: 0.8 }}>📄</div>
                   )}
-                  <div>
-                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--ink)' }}>{d.title}</div>
-                    <div className="expense-meta" style={{ display: 'flex', gap: '8px', fontSize: '0.7rem', color: 'var(--concrete)', marginTop: 4, flexWrap: 'wrap' }}>
-                      <span className="expense-cat-badge" style={{ fontSize: '0.62rem', background: 'var(--paper-2)' }}>{d.revision}</span>
-                      {d.drawnBy && <span>Prepared: <strong>{d.drawnBy}</strong></span>}
-                      {d.checkedBy && <span>Checked: <strong>{d.checkedBy}</strong></span>}
-                      {d.approvedBy && <span>Approved: <strong>{d.approvedBy}</strong></span>}
-                      {d.date && <span>Date: <strong>{d.date}</strong></span>}
-                      {d.zone && d.zone !== 'Default' && (
-                        <span className="expense-cat-badge gold" style={{ fontSize: '0.62rem', textTransform: 'capitalize' }}>
-                          📍 {d.zone === 'foundation' ? 'Foundation' : d.zone === 'ground' ? 'Ground Floor' : d.zone === 'first' ? '1st Floor' : d.zone === 'second' ? '2nd Floor' : d.zone === 'roof' ? 'Roof' : d.zone}
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: 'var(--sp-sm)', alignItems: 'center' }}>
+                <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--ink)', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', marginBottom: 8 }}>
+                    {d.title}
+                  </div>
+                  
+                  <div style={{ fontSize: '0.7rem', color: 'var(--concrete)', marginTop: 'auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{d.date || new Date().toISOString().split('T')[0]}</span>
+                    {d.revision && <span style={{ background: 'var(--paper-2)', padding: '2px 6px', borderRadius: '4px' }}>{d.revision}</span>}
+                  </div>
 
-                  {d.fileUrl && (
-                    <button onClick={() => handleViewFile(d)} className="btn btn-outline btn-sm" style={{ padding: '4px 10px', fontSize: '0.72rem' }}>
-                      View Sheet
-                    </button>
-                  )}
                   {canEdit && (
-                    <button
-                      onClick={() => setShowWizardForDrawing(d)}
-                      className="btn btn-outline btn-sm"
-                      style={{ padding: '4px 10px', fontSize: '0.72rem', color: 'var(--gold-dark)', borderColor: 'var(--gold)' }}
-                    >
-                      ✨ Gen Schedule
-                    </button>
-                  )}
-                  {canEdit && (
-                    <div className="expense-actions" style={{ display: 'flex', gap: 4 }}>
-                      <button className="expense-action-btn" onClick={() => handleEdit(d)} title="Edit Drawing"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                      <button className="expense-action-btn del" onClick={() => handleDelete(d.id)} title="Delete Drawing"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6, marginTop: 12, paddingTop: 10, borderTop: '1px dashed var(--hairline)' }}>
+                      <button 
+                        className="btn btn-outline btn-sm" 
+                        onClick={(e) => { e.stopPropagation(); setShowWizardForDrawing(d); }} 
+                        style={{ padding: '3px 8px', fontSize: '0.65rem', color: 'var(--gold-dark)', borderColor: 'var(--gold)', flex: 1 }}
+                      >
+                        ✨ Gen Schedule
+                      </button>
+                      <button className="expense-action-btn" onClick={(e) => { e.stopPropagation(); handleEdit(d); }} title="Edit">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      </button>
+                      <button className="expense-action-btn del" onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }} title="Delete">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ))}
       {showWizardForDrawing && (
