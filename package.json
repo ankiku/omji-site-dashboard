@@ -2,12 +2,12 @@
   "name": "tool",
   "private": true,
   "version": "0.0.0",
-  "main": "app.js",
+  "main": "server/index.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "postinstall": "cd server && npm install && cd .. && npm run build",
-    "start": "node app.js",
+    "start": "node server/index.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
