@@ -674,7 +674,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                 <>
                   <div className="form-grid-2">
                     <div className="form-group"><label>Subcontractor Name *</label><input className="form-input" value={form.subcontractorName} onChange={e => setForm(p => ({ ...p, subcontractorName: e.target.value }))} required placeholder="Subcontractor / Labour contractor" list="mt-vendor-list" /></div>
-                    <div className="form-group"><label>Amount Paid (₹) *</label><input className="form-input" type="number" min="0.01" step="0.01" value={form.subcontractorAmount} onChange={e => setForm(p => ({ ...p, subcontractorAmount: e.target.value }))} required /></div>
+                    <div className="form-group"><label>Amount Paid (₹) *</label><input className="form-input" type="number" min="0.01" step="any" value={form.subcontractorAmount} onChange={e => setForm(p => ({ ...p, subcontractorAmount: e.target.value }))} required /></div>
                   </div>
                   <div className="form-grid-2">
                     <div className="form-group"><label>Date *</label><input className="form-input" type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required /></div>
@@ -720,7 +720,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
 
                   {/* Qty + Unit + Date */}
                   <div className="form-grid-3">
-                    <div className="form-group"><label>Quantity *</label><input className="form-input" type="number" min="0.01" step="0.01" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} required /></div>
+                    <div className="form-group"><label>Quantity *</label><input className="form-input" type="number" min="0.01" step="any" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} required /></div>
                     <div className="form-group">
                       <label>Unit</label>
                       {form.category === 'RMC' ? (

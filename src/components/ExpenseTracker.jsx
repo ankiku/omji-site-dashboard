@@ -346,7 +346,7 @@ export default function ExpenseTracker({ projectId, canEdit, project, contacts =
                 </div>
                 <div className="form-group">
                   <label>Amount (₹) *</label>
-                  <input className="form-input" type="number" min="0" step="0.01" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} required placeholder="0.00" />
+                  <input className="form-input" type="number" min="0" step="any" value={form.amount} onChange={e => setForm(p => ({ ...p, amount: e.target.value }))} required placeholder="0.00" />
                 </div>
               </div>
               <div className="form-grid-2">
