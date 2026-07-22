@@ -341,7 +341,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         .mt-kpi-accent { position:absolute; top:0; left:0; right:0; height:3px; }
         .mt-bar-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
         .mt-bar-fill { height:8px; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); min-width:2px; }
-        .mt-stock-row { display:grid; grid-template-columns:32px 1.4fr .7fr .7fr .7fr .5fr .7fr; gap:8px; align-items:center; padding:10px 14px; border-radius:8px; font-size:.78rem; transition:all .15s; border:1px solid transparent; }
+        .mt-stock-row { display:grid; grid-template-columns:32px 1.4fr .7fr .7fr .7fr .5fr .7fr; gap:8px; align-items:center; padding:10px 14px; border-radius:8px; font-size:.78rem; transition:all .15s; border:1px solid transparent; min-width: 650px; }
         .mt-stock-row:hover { background:var(--gold-light); border-color:var(--gold); }
         .mt-stock-row:nth-child(even) { background:var(--paper-2); }
         .mt-stock-row:nth-child(even):hover { background:var(--gold-light); }
@@ -355,6 +355,11 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         .mt-vendor-row:hover { border-color:var(--gold); background:var(--gold-light); }
         .mt-kpi-hi { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; background:var(--paper); border:1px solid var(--hairline); transition:all .2s; }
         .mt-kpi-hi:hover { border-color:var(--gold); box-shadow:var(--shadow-sm); }
+        @media (max-width: 768px) {
+          .mt-stock-layout { grid-template-columns: 1fr !important; }
+          .mt-tx-item { flex-direction: column; align-items: flex-start !important; gap: 12px; }
+          .mt-tx-actions { width: 100%; justify-content: space-between; margin-top: 8px; border-top: 1px solid var(--hairline); padding-top: 12px; }
+        }
       `}} />
 
       {/* ── Header ── */}
@@ -445,7 +450,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
 
       {/* ── Stock Ledger View ── */}
       {activeView === 'stock' && (
-        <div style={{ display: 'grid', gridTemplateColumns: catEntries.length > 0 ? '220px 1fr' : '1fr', gap: 'var(--sp-md)', marginBottom: 'var(--sp-lg)', alignItems: 'start' }}>
+        <div className="mt-stock-layout" style={{ display: 'grid', gridTemplateColumns: catEntries.length > 0 ? '220px 1fr' : '1fr', gap: 'var(--sp-md)', marginBottom: 'var(--sp-lg)', alignItems: 'start' }}>
           {catEntries.length > 0 && (
             <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px' }}>
               <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 12 }}>💰 Cost by Category</div>
@@ -601,7 +606,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
             const qty = isSub ? null : isR ? m.received : m.consumed;
             const borderColor = isSub ? 'var(--amber)' : isR ? 'var(--green)' : 'var(--rust)';
             return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--hairline)', borderLeft: `4px solid ${borderColor}`, background: '#fff', transition: 'all .15s' }} className="bh-item">
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--hairline)', borderLeft: `4px solid ${borderColor}`, background: '#fff', transition: 'all .15s' }} className="bh-item mt-tx-item">
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '.6rem', fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: (CAT_COLORS[m.category] || '#ccc') + '18', color: CAT_COLORS[m.category] || 'var(--concrete)' }}>{m.category}</span>
@@ -627,7 +632,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                     )}
                   </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div className="mt-tx-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {isR && m.rate > 0 && <span style={{ fontSize: '.75rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(qty * m.rate)}</span>}
                   {canEdit && (
                     <div style={{ display: 'flex', gap: 4 }}>
