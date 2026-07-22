@@ -263,7 +263,7 @@ function DashboardTab({ stats, phases, tasks, activePhase, focusTask, photos, ex
           <div className="kpi-sub">{stats.delayed} delayed</div>
         </div>
         <div className="kpi-card kpi-gold">
-          <div className="kpi-icon-wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+          <div className="kpi-icon-wrap"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12"/><path d="M6 8h12"/><path d="M6 13h8.5l-5 6"/><path d="M11 13c4.5 0 4.5-10 0-10"/></svg></div>
           <div className="kpi-value">{fmtAmount(totalExpenses)}</div>
           <div className="kpi-label">Total Spent</div>
           <div className="kpi-sub">{expenses.length} entries</div>
