@@ -47,8 +47,8 @@ export default function ContactsDirectory({ projectId, canEdit, contacts, addCon
       <div className="module-header">
         <h2 className="section-title">👥 Contacts Directory</h2>
         <div style={{ display: 'flex', gap: 'var(--sp-sm)', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input className="form-input" placeholder="Search contacts..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ maxWidth: 200, height: 38, fontSize: '0.82rem' }} />
-          <select className="form-select" value={filterRole} onChange={e => setFilterRole(e.target.value)} style={{ maxWidth: 140, height: 38 }}>
+          <input className="form-input" placeholder="Search contacts..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ maxWidth: 200, padding: '8px 12px', fontSize: '0.82rem' }} />
+          <select className="form-select" value={filterRole} onChange={e => setFilterRole(e.target.value)} style={{ maxWidth: 140, padding: '8px 12px' }}>
             <option value="">All Roles</option>
             {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
           </select>

@@ -310,11 +310,11 @@ export default function ExpenseTracker({ projectId, canEdit, project, contacts =
         <div style={{ display: 'flex', gap: 'var(--sp-sm)', flexWrap: 'wrap', flex: 1 }}>
           <button onClick={handleExportPDF} className="btn btn-outline btn-sm" style={{ border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', display: 'flex', alignItems: 'center', gap: 4 }}>📄 PDF</button>
           {project?.slug && <button onClick={() => { const url = `${window.location.origin}/p/${project.slug}/ledger?view=expenses`; navigator.clipboard.writeText(url); toast.success('Shareable link copied!'); }} className="btn btn-outline btn-sm" style={{ border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', display: 'flex', alignItems: 'center', gap: 4 }}>🔗 Share</button>}
-          <select className="form-select" value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ maxWidth: 180, height: 40 }}>
+          <select className="form-select" value={filterCat} onChange={e => setFilterCat(e.target.value)} style={{ maxWidth: 180, padding: '8px 12px' }}>
             <option value="">All Categories</option>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select className="form-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ maxWidth: 180, height: 40 }}>
+          <select className="form-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} style={{ maxWidth: 180, padding: '8px 12px' }}>
             <option value="">All Months</option>
             {months.map(m => <option key={m} value={m}>{new Date(m + '-01').toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</option>)}
           </select>
