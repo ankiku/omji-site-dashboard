@@ -341,7 +341,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         .mt-kpi-accent { position:absolute; top:0; left:0; right:0; height:3px; }
         .mt-bar-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
         .mt-bar-fill { height:8px; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); min-width:2px; }
-        .mt-stock-row { display:grid; grid-template-columns:32px 1.4fr .7fr .7fr .7fr .5fr .7fr; gap:8px; align-items:center; padding:10px 14px; border-radius:8px; font-size:.78rem; transition:all .15s; border:1px solid transparent; min-width: 650px; }
+        .mt-stock-row { display:grid; grid-template-columns:32px 1.4fr .7fr .7fr .7fr .5fr .7fr; gap:8px; align-items:center; padding:10px 14px; border-radius:8px; font-size:.78rem; transition:all .15s; border:1px solid transparent; min-width: 550px; }
         .mt-stock-row:hover { background:var(--gold-light); border-color:var(--gold); }
         .mt-stock-row:nth-child(even) { background:var(--paper-2); }
         .mt-stock-row:nth-child(even):hover { background:var(--gold-light); }
@@ -359,6 +359,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
           .mt-stock-layout { grid-template-columns: 1fr !important; }
           .mt-tx-item { flex-direction: column; align-items: flex-start !important; gap: 12px; }
           .mt-tx-actions { width: 100%; justify-content: space-between; margin-top: 8px; border-top: 1px solid var(--hairline); padding-top: 12px; }
+          .expense-action-btn { padding: 10px; margin-left: 8px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; }
         }
       `}} />
 
@@ -466,7 +467,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
             </div>
           )}
           {sortedStock.length > 0 && (
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px', overflow: 'auto' }}>
+            <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px', overflow: 'auto', maxHeight: '450px' }}>
               <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 12 }}>📋 Live Stock Ledger — {sortedStock.length} items</div>
               <div className="mt-stock-row" style={{ fontWeight: 700, fontSize: '.6rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.04em', borderBottom: '2px solid var(--hairline)', paddingBottom: 8, marginBottom: 4 }}>
                 <span></span>

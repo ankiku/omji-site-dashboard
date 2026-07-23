@@ -425,6 +425,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
                       <div>
                         <div style={{ fontSize: '0.9rem', fontWeight: 800, color: 'var(--ink)' }}>{fmtAmt(p.amount)}</div>
                         <div className="mono" style={{ fontSize: '0.65rem', color: 'var(--concrete)' }}>Paid: {fmtAmt(p.paidAmount)}</div>
+                        {p.amount - p.paidAmount > 0 && <div className="mono" style={{ fontSize: '0.65rem', color: 'var(--rust)', fontWeight: 600 }}>Due: {fmtAmt(p.amount - p.paidAmount)}</div>}
                       </div>
                       {canEdit && (
                         <div className="expense-actions">
