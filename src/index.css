@@ -2256,6 +2256,19 @@ a:hover {
   color: var(--rust);
 }
 
+@media (max-width: 768px) {
+  .expense-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    border-width: 1.5px;
+  }
+  .expense-action-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+}
+
 /* ═══════════════════════════════════════════
    NEW STYLES — Professional Upgrade
    ═══════════════════════════════════════════ */

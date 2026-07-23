@@ -355,11 +355,18 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         .mt-vendor-row:hover { border-color:var(--gold); background:var(--gold-light); }
         .mt-kpi-hi { display:flex; align-items:center; gap:10px; padding:12px 16px; border-radius:10px; background:var(--paper); border:1px solid var(--hairline); transition:all .2s; }
         .mt-kpi-hi:hover { border-color:var(--gold); box-shadow:var(--shadow-sm); }
+        .mt-tx-card { display:flex; flex-direction:column; padding:12px 14px; border-radius:8px; border:1px solid var(--hairline); background:#fff; transition:all .15s; }
+        .mt-tx-card:hover { border-color:var(--gold); box-shadow:var(--shadow-sm); }
+        .mt-tx-top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+        .mt-tx-main { flex:1; min-width:0; }
+        .mt-tx-amt-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px; }
+        .mt-tx-meta { font-size:.65rem; color:var(--concrete); margin-top:4px; font-family:var(--font-mono); display:flex; gap:10px; flex-wrap:wrap; }
+        .mt-tx-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
         @media (max-width: 768px) {
           .mt-stock-layout { grid-template-columns: 1fr !important; }
-          .mt-tx-item { flex-direction: column; align-items: flex-start !important; gap: 12px; }
-          .mt-tx-actions { width: 100%; justify-content: space-between; margin-top: 8px; border-top: 1px solid var(--hairline); padding-top: 12px; }
-          .expense-action-btn { padding: 10px; margin-left: 8px; width: 40px; height: 40px; display: inline-flex; align-items: center; justify-content: center; }
+          .mt-tx-top { flex-wrap: wrap; }
+          .mt-tx-actions { width:100%; justify-content:flex-end; padding-top:10px; border-top:1px solid var(--hairline); margin-top:6px; }
+          .expense-action-btn { width:38px; height:38px; display:inline-flex; align-items:center; justify-content:center; }
         }
       `}} />
 
@@ -451,21 +458,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
 
       {/* ── Stock Ledger View ── */}
       {activeView === 'stock' && (
-        <div className="mt-stock-layout" style={{ display: 'grid', gridTemplateColumns: catEntries.length > 0 ? '220px 1fr' : '1fr', gap: 'var(--sp-md)', marginBottom: 'var(--sp-lg)', alignItems: 'start' }}>
-          {catEntries.length > 0 && (
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px' }}>
-              <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 12 }}>💰 Cost by Category</div>
-              {catEntries.map(([cat, val]) => (
-                <div key={cat} className="mt-bar-row">
-                  <span style={{ width: 62, fontSize: '.62rem', fontWeight: 600, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat}</span>
-                  <div style={{ flex: 1 }}>
-                    <div className="mt-bar-fill" style={{ width: `${Math.max((val / maxCatVal) * 100, 4)}%`, background: CAT_COLORS[cat] || 'var(--gold)', opacity: .85 }} />
-                  </div>
-                  <span style={{ fontSize: '.58rem', fontWeight: 700, color: 'var(--concrete)', fontFamily: 'var(--font-mono)', minWidth: 50, textAlign: 'right' }}>{fmtAmt(val)}</span>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="mt-stock-layout" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--sp-md)', marginBottom: 'var(--sp-lg)', alignItems: 'start' }}>
           {sortedStock.length > 0 && (
             <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px', overflow: 'auto', maxHeight: '450px' }}>
               <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 12 }}>📋 Live Stock Ledger — {sortedStock.length} items</div>
@@ -600,45 +593,53 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
           </div>
         </div>
         {filteredTx.length === 0 && <div style={{ textAlign: 'center', padding: '30px', color: 'var(--concrete)', fontSize: '.8rem' }}>No transactions match current filters.</div>}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 420, overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 480, overflowY: 'auto' }}>
           {filteredTx.map(m => {
             const isSub = m.category === 'Subcontractor Payment';
             const isR = !isSub && (m.received || 0) > 0;
             const qty = isSub ? null : isR ? m.received : m.consumed;
+            const txAmt = isSub ? (m.subcontractorPayment || 0) : (isR && m.rate > 0 ? qty * m.rate : 0);
             const borderColor = isSub ? 'var(--amber)' : isR ? 'var(--green)' : 'var(--rust)';
             return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', borderRadius: 8, border: '1px solid var(--hairline)', borderLeft: `4px solid ${borderColor}`, background: '#fff', transition: 'all .15s' }} className="bh-item mt-tx-item">
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '.6rem', fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: (CAT_COLORS[m.category] || '#ccc') + '18', color: CAT_COLORS[m.category] || 'var(--concrete)' }}>{m.category}</span>
-                    <span style={{ fontSize: '.8rem', fontWeight: 700, color: 'var(--ink)' }}>{m.name}</span>
-                    {!isSub && qty !== null && <span style={{ fontSize: '.78rem', fontWeight: 800, color: isR ? 'var(--green)' : 'var(--rust)', fontFamily: 'var(--font-mono)' }}>{isR ? '+' : '-'}{qty} {m.unit}</span>}
-                    {isSub && <span style={{ fontSize: '.78rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(m.subcontractorPayment)}</span>}
+              <div key={m.id} className="mt-tx-card" style={{ borderLeft: `4px solid ${borderColor}` }}>
+                <div className="mt-tx-top">
+                  <div className="mt-tx-main">
+                    {/* Row 1: Category + Name */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '.6rem', fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: (CAT_COLORS[m.category] || '#ccc') + '18', color: CAT_COLORS[m.category] || 'var(--concrete)' }}>{m.category}</span>
+                      <span style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--ink)' }}>{m.name}</span>
+                    </div>
+                    {/* Row 2: Qty + Amount together */}
+                    <div className="mt-tx-amt-row">
+                      {!isSub && qty !== null && (
+                        <span style={{ fontSize: '.82rem', fontWeight: 800, color: isR ? 'var(--green)' : 'var(--rust)', fontFamily: 'var(--font-mono)' }}>{isR ? '+' : '-'}{qty} {m.unit}</span>
+                      )}
+                      {txAmt > 0 && (
+                        <span style={{ fontSize: '.82rem', fontWeight: 800, color: isSub ? 'var(--amber)' : 'var(--ink)', fontFamily: 'var(--font-mono)', background: 'var(--paper-2)', padding: '1px 7px', borderRadius: 5, border: '1px solid var(--hairline)' }}>₹{Number(txAmt).toLocaleString('en-IN')}</span>
+                      )}
+                      {isR && m.rate > 0 && (
+                        <span style={{ fontSize: '.6rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>@ ₹{Number(m.rate).toLocaleString('en-IN')}/{m.unit}</span>
+                      )}
+                    </div>
+                    {/* Row 3: Meta */}
+                    <div className="mt-tx-meta">
+                      {m.date && <span>📅 {m.date}</span>}
+                      {m.vendor && <span>🏢 {m.vendor}</span>}
+                      {m.notes && <span>📝 {m.notes}</span>}
+                      {m.billUrls && m.billUrls.length > 0 && m.billUrls.map((url, i) => {
+                        const isPdf = url.toLowerCase().endsWith('.pdf');
+                        return (
+                          <span key={i} style={{ color: 'var(--gold-dark)', cursor: 'pointer', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3, background: 'var(--gold-light)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--gold)' }} onClick={() => window.open(url, '_blank')}>
+                            {isPdf ? '📄 PDF' : '🖼️ Bill'} {m.billUrls.length > 1 ? i + 1 : ''}
+                          </span>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '.65rem', color: 'var(--concrete)', marginTop: 3, fontFamily: 'var(--font-mono)', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {m.date && <span>📅 {m.date}</span>}
-                    {m.vendor && <span>🏢 {m.vendor}</span>}
-                    {m.notes && <span>📝 {m.notes}</span>}
-                    {m.billUrls && m.billUrls.length > 0 && (
-                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                        {m.billUrls.map((url, i) => {
-                          const isPdf = url.toLowerCase().endsWith('.pdf');
-                          return (
-                            <span key={i} style={{ color: 'var(--gold-dark)', cursor: 'pointer', fontSize: '0.65rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3, background: 'var(--gold-light)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--gold)' }} onClick={() => window.open(url, '_blank')}>
-                              {isPdf ? '📄 PDF' : '🖼️ Image'} {m.billUrls.length > 1 ? i + 1 : ''}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-tx-actions" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {isR && m.rate > 0 && <span style={{ fontSize: '.75rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(qty * m.rate)}</span>}
                   {canEdit && (
-                    <div style={{ display: 'flex', gap: 4 }}>
-                      <button className="expense-action-btn" onClick={() => handleEdit(m)} title="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-                      <button className="expense-action-btn del" onClick={() => handleDelete(m.id)} title="Delete"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    <div className="mt-tx-actions">
+                      <button className="expense-action-btn" onClick={() => handleEdit(m)} title="Edit"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                      <button className="expense-action-btn del" onClick={() => handleDelete(m.id)} title="Delete"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     </div>
                   )}
                 </div>
