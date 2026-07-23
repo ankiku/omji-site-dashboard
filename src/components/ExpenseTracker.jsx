@@ -108,7 +108,7 @@ export default function ExpenseTracker({ projectId, canEdit, project, contacts =
     if (filterCat && e.category !== filterCat) return false;
     if (filterMonth && !(e.date || '').startsWith(filterMonth)) return false;
     return true;
-  });
+  }).slice().reverse();
 
   // Stats
   const totalAll = expenses.reduce((s, e) => s + (e.amount || 0), 0);

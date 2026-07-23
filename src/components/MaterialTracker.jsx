@@ -269,7 +269,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
     if (filterType === 'SubPayment' && m.category !== 'Subcontractor Payment') return false;
     if (searchTerm && !`${m.name} ${m.category} ${m.vendor} ${m.notes}`.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
-  });
+  }).slice().reverse();
 
   const fmtAmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
   const catEntries = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]);

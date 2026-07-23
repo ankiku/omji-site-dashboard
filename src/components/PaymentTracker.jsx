@@ -159,7 +159,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
         list = list.filter(p => p.type === filterType);
       }
     }
-    return list.sort((a, b) => Number(a.order) - Number(b.order));
+    return list.sort((a, b) => Number(b.order) - Number(a.order));
   }, [payments, filterType]);
 
   const handleExportPDF = () => {
