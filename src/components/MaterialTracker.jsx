@@ -341,7 +341,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         .mt-kpi-accent { position:absolute; top:0; left:0; right:0; height:3px; }
         .mt-bar-row { display:flex; align-items:center; gap:10px; padding:6px 0; }
         .mt-bar-fill { height:8px; border-radius:4px; transition:width .6s cubic-bezier(.4,0,.2,1); min-width:2px; }
-        .mt-stock-row { display:grid; grid-template-columns:32px 1.4fr .7fr .7fr .7fr .5fr .7fr; gap:8px; align-items:center; padding:10px 14px; border-radius:8px; font-size:.78rem; transition:all .15s; border:1px solid transparent; min-width: 550px; }
+        .mt-stock-row { display:grid; grid-template-columns:32px 2.4fr 1.1fr 1fr; gap:8px; align-items:center; padding:9px 14px; border-radius:8px; font-size:.78rem; transition:all .15s; border:1px solid transparent; min-width: 300px; }
         .mt-stock-row:hover { background:var(--gold-light); border-color:var(--gold); }
         .mt-stock-row:nth-child(even) { background:var(--paper-2); }
         .mt-stock-row:nth-child(even):hover { background:var(--gold-light); }
@@ -459,39 +459,55 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
       {/* ── Stock Ledger View ── */}
       {activeView === 'stock' && (
         <div className="mt-stock-layout" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 'var(--sp-md)', marginBottom: 'var(--sp-lg)', alignItems: 'start' }}>
-          {sortedStock.length > 0 && (
-            <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px', overflow: 'auto', maxHeight: '450px' }}>
-              <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 12 }}>📋 Live Stock Ledger — {sortedStock.length} items</div>
-              <div className="mt-stock-row" style={{ fontWeight: 700, fontSize: '.6rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.04em', borderBottom: '2px solid var(--hairline)', paddingBottom: 8, marginBottom: 4 }}>
-                <span></span>
-                <span className="mt-sort-btn" onClick={() => toggleSort('name')}>Material<SortIcon k="name" /></span>
-                <span>Category</span>
-                <span className="mt-sort-btn" onClick={() => toggleSort('received')}>Received<SortIcon k="received" /></span>
-                <span>Consumed</span>
-                <span className="mt-sort-btn" onClick={() => toggleSort('balance')}>Balance<SortIcon k="balance" /></span>
-                <span className="mt-sort-btn" onClick={() => toggleSort('cost')}>Spent<SortIcon k="cost" /></span>
+          {sortedStock.length > 0 && (() => {
+            // Group by category in sorted order
+            const groups = {};
+            sortedStock.forEach(s => {
+              if (!groups[s.category]) groups[s.category] = [];
+              groups[s.category].push(s);
+            });
+            return (
+              <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px', overflow: 'auto', maxHeight: '500px' }}>
+                <div style={{ fontSize: '.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginBottom: 12 }}>📋 Live Stock Ledger — {sortedStock.length} items</div>
+                {/* Header */}
+                <div className="mt-stock-row" style={{ fontWeight: 700, fontSize: '.6rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.04em', borderBottom: '2px solid var(--hairline)', paddingBottom: 8, marginBottom: 8 }}>
+                  <span></span>
+                  <span className="mt-sort-btn" onClick={() => toggleSort('name')}>Material<SortIcon k="name" /></span>
+                  <span className="mt-sort-btn" onClick={() => toggleSort('received')}>Received<SortIcon k="received" /></span>
+                  <span className="mt-sort-btn" onClick={() => toggleSort('cost')}>Spent<SortIcon k="cost" /></span>
+                </div>
+                {/* Category Groups */}
+                {Object.entries(groups).map(([cat, items]) => {
+                  const catColor = CAT_COLORS[cat] || '#7C7468';
+                  const catTotal = items.reduce((s, i) => s + i.totalCost, 0);
+                  return (
+                    <div key={cat} style={{ marginBottom: 12 }}>
+                      {/* Category header */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 6, background: catColor + '14', borderLeft: `3px solid ${catColor}`, marginBottom: 4 }}>
+                        <span style={{ fontSize: '.65rem', fontWeight: 800, color: catColor, textTransform: 'uppercase', letterSpacing: '.06em', fontFamily: 'var(--font-mono)', flex: 1 }}>{cat}</span>
+                        <span style={{ fontSize: '.6rem', fontWeight: 700, color: catColor, fontFamily: 'var(--font-mono)' }}>{items.length} item{items.length !== 1 ? 's' : ''}</span>
+                        <span style={{ fontSize: '.6rem', fontWeight: 700, color: catColor, fontFamily: 'var(--font-mono)' }}>{fmtAmt(catTotal)}</span>
+                      </div>
+                      {/* Items in this category */}
+                      {items.map((s, i) => {
+                        const bal = s.totalReceived - s.totalConsumed;
+                        const pct = s.totalReceived > 0 ? (bal / s.totalReceived) * 100 : 0;
+                        const status = bal <= 0 ? 'Out' : pct < 20 ? 'Low' : 'Healthy';
+                        return (
+                          <div key={i} className={`mt-stock-row ${status !== 'Healthy' ? 'mt-alert-pulse' : ''}`}>
+                            <StockGauge pct={pct} />
+                            <span style={{ fontWeight: 700, color: 'var(--ink)' }}>{s.name}</span>
+                            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '.7rem', color: 'var(--green)' }}>+{s.totalReceived.toFixed(1)} {s.unit}</span>
+                            <span style={{ fontSize: '.62rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(s.totalCost)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
-              {sortedStock.map((s, i) => {
-                const bal = s.totalReceived - s.totalConsumed;
-                const pct = s.totalReceived > 0 ? (bal / s.totalReceived) * 100 : 0;
-                let sColor = 'var(--green)';
-                if (bal <= 0) sColor = 'var(--rust)';
-                else if (pct < 20) sColor = 'var(--amber)';
-                const status = bal <= 0 ? 'Out' : pct < 20 ? 'Low' : 'Healthy';
-                return (
-                  <div key={i} className={`mt-stock-row ${status !== 'Healthy' ? 'mt-alert-pulse' : ''}`}>
-                    <StockGauge pct={pct} />
-                    <span style={{ fontWeight: 700, color: 'var(--ink)' }}>{s.name}</span>
-                    <span><span style={{ fontSize: '.58rem', fontWeight: 600, padding: '2px 5px', borderRadius: 4, background: (CAT_COLORS[s.category] || '#ccc') + '18', color: CAT_COLORS[s.category] || 'var(--concrete)' }}>{s.category}</span></span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '.7rem', color: 'var(--green)' }}>+{s.totalReceived.toFixed(1)} {s.unit}</span>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '.7rem', color: 'var(--rust)' }}>-{s.totalConsumed.toFixed(1)} {s.unit}</span>
-                    <span style={{ fontWeight: 800, color: sColor, fontFamily: 'var(--font-mono)', fontSize: '.72rem' }}>{bal.toFixed(1)}</span>
-                    <span style={{ fontSize: '.62rem', fontWeight: 700, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(s.totalCost)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+            );
+          })()}
         </div>
       )}
 
@@ -759,7 +775,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                         </datalist>
                         {vendorContacts.length > 0 && <div style={{ fontSize: '.6rem', color: 'var(--concrete)', marginTop: 3 }}>💡 {vendorContacts.length} vendor(s) from contacts</div>}
                       </div>
-                      <div className="form-group"><label>Rate (₹/unit)</label><input className="form-input" type="number" min="0" value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} /></div>
+                      <div className="form-group"><label>Rate (₹/unit)</label><input className="form-input" type="number" min="0" step="any" value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} /></div>
                     </div>
                   )}
 
