@@ -45,6 +45,11 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filterType, setFilterType] = useState('All');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterVendor, setFilterVendor] = useState('');
+  const [txSort, setTxSort] = useState('date-desc');
+  const [showSummary, setShowSummary] = useState(false);
+  const [summaryTab, setSummaryTab] = useState('vendor');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState('name');
   const [sortDir, setSortDir] = useState('asc');
@@ -263,13 +268,88 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
     return { stockItems: items, totalSpent, totalSubPaid, catBreakdown: cb, lowStock, vendorBreakdown: vb, materialKPIs };
   }, [materials]);
 
+  // Unique categories & vendors for filter dropdowns
+  const uniqueCategories = useMemo(() => [...new Set(materials.map(m => m.category).filter(Boolean))].sort(), [materials]);
+  const uniqueVendors = useMemo(() => [...new Set(materials.filter(m => (m.received||0) > 0 && m.vendor).map(m => m.vendor))].sort(), [materials]);
+
+  // Vendor-wise summary: total qty purchased & total cost per vendor
+  const vendorSummary = useMemo(() => {
+    const vm = {};
+    materials.forEach(m => {
+      if ((m.received||0) > 0 && m.vendor) {
+        if (!vm[m.vendor]) vm[m.vendor] = { vendor: m.vendor, totalQty: 0, totalCost: 0, items: {}, txCount: 0 };
+        vm[m.vendor].totalQty += (m.received||0);
+        vm[m.vendor].totalCost += (m.received||0) * (m.rate||0);
+        vm[m.vendor].txCount += 1;
+        const mk = `${m.name} (${m.unit})`;
+        if (!vm[m.vendor].items[mk]) vm[m.vendor].items[mk] = { qty: 0, cost: 0 };
+        vm[m.vendor].items[mk].qty += (m.received||0);
+        vm[m.vendor].items[mk].cost += (m.received||0) * (m.rate||0);
+      }
+      if (m.category === 'Subcontractor Payment' && m.vendor) {
+        if (!vm[m.vendor]) vm[m.vendor] = { vendor: m.vendor, totalQty: 0, totalCost: 0, items: {}, txCount: 0 };
+        vm[m.vendor].totalCost += (m.subcontractorPayment||0);
+        vm[m.vendor].txCount += 1;
+        const mk = 'Subcontractor Payment';
+        if (!vm[m.vendor].items[mk]) vm[m.vendor].items[mk] = { qty: 0, cost: 0 };
+        vm[m.vendor].items[mk].cost += (m.subcontractorPayment||0);
+      }
+    });
+    return Object.values(vm).sort((a,b) => b.totalCost - a.totalCost);
+  }, [materials]);
+
+  // Material-wise purchase summary
+  const materialPurchaseSummary = useMemo(() => {
+    const mm = {};
+    materials.forEach(m => {
+      if ((m.received||0) > 0) {
+        const k = `${m.name}|${m.unit}`;
+        if (!mm[k]) mm[k] = { name: m.name, unit: m.unit, category: m.category, totalQty: 0, totalCost: 0, vendors: {}, txCount: 0 };
+        mm[k].totalQty += (m.received||0);
+        mm[k].totalCost += (m.received||0) * (m.rate||0);
+        mm[k].txCount += 1;
+        if (m.vendor) {
+          if (!mm[k].vendors[m.vendor]) mm[k].vendors[m.vendor] = { qty: 0, cost: 0 };
+          mm[k].vendors[m.vendor].qty += (m.received||0);
+          mm[k].vendors[m.vendor].cost += (m.received||0) * (m.rate||0);
+        }
+      }
+    });
+    return Object.values(mm).sort((a,b) => b.totalCost - a.totalCost);
+  }, [materials]);
+
   const filteredTx = materials.filter(m => {
     if (filterType === 'Receipt' && (m.received || 0) <= 0) return false;
     if (filterType === 'Consumption' && (m.consumed || 0) <= 0) return false;
     if (filterType === 'SubPayment' && m.category !== 'Subcontractor Payment') return false;
+    if (filterCategory && m.category !== filterCategory) return false;
+    if (filterVendor && (m.vendor || '') !== filterVendor) return false;
     if (searchTerm && !`${m.name} ${m.category} ${m.vendor} ${m.notes}`.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   }).slice().reverse();
+
+  // Sorted transactions for the ledger
+  const sortedTx = useMemo(() => {
+    return [...filteredTx].sort((a, b) => {
+      const aIsSub = a.category === 'Subcontractor Payment';
+      const bIsSub = b.category === 'Subcontractor Payment';
+      const aIsR = !aIsSub && (a.received||0) > 0;
+      const bIsR = !bIsSub && (b.received||0) > 0;
+      const aQty = aIsSub ? 0 : aIsR ? a.received : a.consumed;
+      const bQty = bIsSub ? 0 : bIsR ? b.received : b.consumed;
+      const aTotal = aIsSub ? (a.subcontractorPayment||0) : (aIsR && a.rate > 0 ? aQty * a.rate : 0);
+      const bTotal = bIsSub ? (b.subcontractorPayment||0) : (bIsR && b.rate > 0 ? bQty * b.rate : 0);
+      switch (txSort) {
+        case 'name-asc': return (a.name||'').localeCompare(b.name||'');
+        case 'name-desc': return (b.name||'').localeCompare(a.name||'');
+        case 'total-asc': return aTotal - bTotal;
+        case 'total-desc': return bTotal - aTotal;
+        case 'date-asc': return new Date(a.date||0) - new Date(b.date||0);
+        case 'date-desc': return new Date(b.date||0) - new Date(a.date||0);
+        default: return 0;
+      }
+    });
+  }, [filteredTx, txSort]);
 
   const fmtAmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
   const catEntries = Object.entries(catBreakdown).sort((a, b) => b[1] - a[1]);
@@ -362,6 +442,26 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         .mt-tx-amt-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px; }
         .mt-tx-meta { font-size:.65rem; color:var(--concrete); margin-top:4px; font-family:var(--font-mono); display:flex; gap:10px; flex-wrap:wrap; }
         .mt-tx-actions { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+        .mt-filter-select { padding:5px 10px; border-radius:6px; border:1px solid var(--hairline); font-size:.72rem; font-family:var(--font-body); background:var(--paper-2); cursor:pointer; transition:border-color .15s; min-width:100px; }
+        .mt-filter-select:focus { border-color:var(--gold); outline:none; }
+        .mt-summary-panel { background:var(--paper); border:1px solid var(--hairline); border-radius:var(--radius); overflow:hidden; margin-bottom:var(--sp-lg); transition:all .3s ease; }
+        .mt-summary-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; cursor:pointer; user-select:none; }
+        .mt-summary-header:hover { background:var(--paper-2); }
+        .mt-summary-tabs { display:flex; gap:0; border-bottom:2px solid var(--hairline); }
+        .mt-summary-tab { padding:10px 20px; font-size:.72rem; font-weight:700; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.04em; cursor:pointer; border:none; background:transparent; color:var(--concrete); transition:all .15s; position:relative; }
+        .mt-summary-tab.active { color:var(--ink); }
+        .mt-summary-tab.active::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:2px; background:var(--gold); }
+        .mt-summary-tab:hover { color:var(--ink); background:var(--paper-2); }
+        .mt-summary-card { padding:14px 18px; border-bottom:1px solid var(--hairline); transition:background .15s; }
+        .mt-summary-card:last-child { border-bottom:none; }
+        .mt-summary-card:hover { background:var(--gold-light); }
+        .mt-summary-sub { font-size:.65rem; color:var(--concrete); font-family:var(--font-mono); display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+        .mt-summary-sub-item { background:var(--paper-2); padding:3px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px; }
+        .mt-clear-filters { padding:4px 10px; border-radius:6px; border:1px solid var(--rust); font-size:.65rem; font-weight:700; cursor:pointer; background:var(--rust-light); color:var(--rust); font-family:var(--font-mono); transition:all .15s; }
+        .mt-clear-filters:hover { background:var(--rust); color:#fff; }
+        .mt-active-filter { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:20px; font-size:.65rem; font-weight:700; background:var(--gold-light); color:var(--gold-dark); border:1px solid var(--gold); font-family:var(--font-mono); }
+        .mt-active-filter button { background:none; border:none; cursor:pointer; color:var(--gold-dark); font-size:.7rem; padding:0; line-height:1; opacity:.7; }
+        .mt-active-filter button:hover { opacity:1; color:var(--rust); }
         @media (max-width: 768px) {
           .mt-stock-layout { grid-template-columns: 1fr !important; }
           .mt-tx-top { flex-wrap: wrap; }
@@ -593,6 +693,74 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         </div>
       )}
 
+      {/* ── Purchase Summary Panel ── */}
+      <div className="mt-summary-panel">
+        <div className="mt-summary-header" onClick={() => setShowSummary(s => !s)}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontSize:'1rem' }}>📊</span>
+            <div>
+              <div style={{ fontSize:'.78rem', fontWeight:700, color:'var(--ink)' }}>Purchase Summary</div>
+              <div style={{ fontSize:'.62rem', color:'var(--concrete)', fontFamily:'var(--font-mono)', marginTop:1 }}>Total purchased per vendor & per material</div>
+            </div>
+          </div>
+          <span style={{ fontSize:'.8rem', color:'var(--concrete)', transition:'transform .2s', transform: showSummary ? 'rotate(180deg)' : 'rotate(0deg)' }}>▼</span>
+        </div>
+        {showSummary && (
+          <div>
+            <div className="mt-summary-tabs">
+              <button className={`mt-summary-tab ${summaryTab === 'vendor' ? 'active' : ''}`} onClick={() => setSummaryTab('vendor')}>🏢 Vendor-wise</button>
+              <button className={`mt-summary-tab ${summaryTab === 'material' ? 'active' : ''}`} onClick={() => setSummaryTab('material')}>📦 Material-wise</button>
+            </div>
+            <div style={{ maxHeight:350, overflowY:'auto' }}>
+              {summaryTab === 'vendor' && vendorSummary.map((v, i) => (
+                <div key={i} className="mt-summary-card">
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <div style={{ fontSize:'.82rem', fontWeight:700, color:'var(--ink)' }}>🏢 {v.vendor}</div>
+                      <div style={{ fontSize:'.62rem', color:'var(--concrete)', fontFamily:'var(--font-mono)', marginTop:2 }}>{v.txCount} purchase(s)</div>
+                    </div>
+                    <div style={{ textAlign:'right' }}>
+                      <div style={{ fontSize:'.9rem', fontWeight:800, color:'var(--ink)', fontFamily:'var(--font-mono)' }}>{fmtAmt(v.totalCost)}</div>
+                    </div>
+                  </div>
+                  <div className="mt-summary-sub">
+                    {Object.entries(v.items).map(([mat, d]) => (
+                      <span key={mat} className="mt-summary-sub-item">{mat}: {d.qty > 0 ? d.qty.toFixed(1) + ' — ' : ''}{fmtAmt(d.cost)}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {summaryTab === 'vendor' && vendorSummary.length === 0 && <div style={{ padding:20, textAlign:'center', color:'var(--concrete)', fontSize:'.78rem' }}>No vendor data available.</div>}
+
+              {summaryTab === 'material' && materialPurchaseSummary.map((m, i) => (
+                <div key={i} className="mt-summary-card">
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                    <div>
+                      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                        <span style={{ fontSize:'.58rem', fontWeight:600, padding:'2px 6px', borderRadius:4, background:(CAT_COLORS[m.category]||'#ccc')+'18', color:CAT_COLORS[m.category]||'var(--concrete)' }}>{m.category}</span>
+                        <span style={{ fontSize:'.82rem', fontWeight:700, color:'var(--ink)' }}>{m.name}</span>
+                      </div>
+                      <div style={{ fontSize:'.62rem', color:'var(--concrete)', fontFamily:'var(--font-mono)', marginTop:2 }}>Total purchased: <strong style={{ color:'var(--green)' }}>{m.totalQty.toFixed(1)} {m.unit}</strong> · {m.txCount} receipt(s)</div>
+                    </div>
+                    <div style={{ textAlign:'right' }}>
+                      <div style={{ fontSize:'.9rem', fontWeight:800, color:'var(--ink)', fontFamily:'var(--font-mono)' }}>{fmtAmt(m.totalCost)}</div>
+                    </div>
+                  </div>
+                  {Object.keys(m.vendors).length > 0 && (
+                    <div className="mt-summary-sub">
+                      {Object.entries(m.vendors).map(([vn, d]) => (
+                        <span key={vn} className="mt-summary-sub-item">🏢 {vn}: {d.qty.toFixed(1)} {m.unit} — {fmtAmt(d.cost)}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {summaryTab === 'material' && materialPurchaseSummary.length === 0 && <div style={{ padding:20, textAlign:'center', color:'var(--concrete)', fontSize:'.78rem' }}>No material data available.</div>}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* ── Transaction Log ── */}
       <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
@@ -600,6 +768,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
           <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
             <button onClick={handleExportPDF} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>📄 PDF</button>
             {project?.slug && <button onClick={handleShare} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>🔗 Share</button>}
+            <button onClick={() => setShowSummary(s => !s)} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: showSummary ? 'var(--gold)' : 'var(--gold-light)', color: showSummary ? '#fff' : 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>📊 Summary</button>
             <input value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search..." style={{ padding: '5px 10px', border: '1px solid var(--hairline)', borderRadius: 6, fontSize: '.75rem', fontFamily: 'var(--font-body)', width: 130, background: 'var(--paper-2)' }} />
             {['All', 'Receipt', 'Consumption', 'SubPayment'].map(t => (
               <button key={t} onClick={() => setFilterType(t)} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: filterType === t ? '1.5px solid var(--ink)' : '1.5px solid var(--hairline)', background: filterType === t ? 'var(--ink)' : 'var(--paper)', color: filterType === t ? '#fff' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '.04em', transition: 'all .15s' }}>
@@ -608,9 +777,39 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
             ))}
           </div>
         </div>
+
+        {/* Category, Vendor Filter & Sort Row */}
+        <div style={{ display:'flex', gap:8, alignItems:'center', marginBottom:12, flexWrap:'wrap' }}>
+          <span style={{ fontSize:'.62rem', fontWeight:700, color:'var(--concrete)', textTransform:'uppercase', letterSpacing:'.05em', fontFamily:'var(--font-mono)' }}>Filter:</span>
+          <select className="mt-filter-select" value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
+            <option value="">All Categories</option>
+            {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select className="mt-filter-select" value={filterVendor} onChange={e => setFilterVendor(e.target.value)}>
+            <option value="">All Vendors</option>
+            {uniqueVendors.map(v => <option key={v} value={v}>{v}</option>)}
+          </select>
+          <span style={{ fontSize:'.62rem', fontWeight:700, color:'var(--concrete)', textTransform:'uppercase', letterSpacing:'.05em', fontFamily:'var(--font-mono)', marginLeft:8 }}>Sort:</span>
+          <select className="mt-filter-select" value={txSort} onChange={e => setTxSort(e.target.value)}>
+            <option value="date-desc">Date: New → Old</option>
+            <option value="date-asc">Date: Old → New</option>
+            <option value="name-asc">Name: A → Z</option>
+            <option value="name-desc">Name: Z → A</option>
+            <option value="total-desc">Total: High → Low</option>
+            <option value="total-asc">Total: Low → High</option>
+          </select>
+          {(filterCategory || filterVendor) && (
+            <>
+              {filterCategory && <span className="mt-active-filter">📂 {filterCategory} <button onClick={() => setFilterCategory('')}>✕</button></span>}
+              {filterVendor && <span className="mt-active-filter">🏢 {filterVendor} <button onClick={() => setFilterVendor('')}>✕</button></span>}
+              <button className="mt-clear-filters" onClick={() => { setFilterCategory(''); setFilterVendor(''); }}>Clear All</button>
+            </>
+          )}
+        </div>
+
         {filteredTx.length === 0 && <div style={{ textAlign: 'center', padding: '30px', color: 'var(--concrete)', fontSize: '.8rem' }}>No transactions match current filters.</div>}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 480, overflowY: 'auto' }}>
-          {filteredTx.map(m => {
+          {sortedTx.map(m => {
             const isSub = m.category === 'Subcontractor Payment';
             const isR = !isSub && (m.received || 0) > 0;
             const qty = isSub ? null : isR ? m.received : m.consumed;
