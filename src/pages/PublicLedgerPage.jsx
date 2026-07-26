@@ -37,7 +37,10 @@ export default function PublicLedgerPage() {
   const [localContactId, setLocalContactId] = useState(filterContactId);
   const [showVendorSummary, setShowVendorSummary] = useState(false);
   const [matFilterCat, setMatFilterCat] = useState('');
+  const [matFilterVendor, setMatFilterVendor] = useState('');
   const [matSearch, setMatSearch] = useState('');
+  const [matSummaryView, setMatSummaryView] = useState(''); // '' | 'vendor' | 'category'
+  const [matSortBy, setMatSortBy] = useState('date-desc');
 
   useEffect(() => {
     async function load() {
@@ -117,13 +120,61 @@ export default function PublicLedgerPage() {
   const filteredMaterials = useMemo(() => {
     let list = materials.filter(m => m.category !== 'Subcontractor Payment');
     if (matFilterCat) list = list.filter(m => m.category === matFilterCat);
+    if (matFilterVendor) list = list.filter(m => (m.vendor || '') === matFilterVendor);
     if (matSearch) list = list.filter(m => `${m.name} ${m.category} ${m.vendor}`.toLowerCase().includes(matSearch.toLowerCase()));
-    return list.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
-  }, [materials, matFilterCat, matSearch]);
+    // Sort
+    list = [...list];
+    switch (matSortBy) {
+      case 'date-asc': list.sort((a, b) => new Date(a.date || a.createdAt) - new Date(b.date || b.createdAt)); break;
+      case 'name-asc': list.sort((a, b) => (a.name || '').localeCompare(b.name || '')); break;
+      case 'name-desc': list.sort((a, b) => (b.name || '').localeCompare(a.name || '')); break;
+      case 'total-desc': list.sort((a, b) => { const at = (a.received||0)*(a.rate||0); const bt = (b.received||0)*(b.rate||0); return bt - at; }); break;
+      case 'total-asc': list.sort((a, b) => { const at = (a.received||0)*(a.rate||0); const bt = (b.received||0)*(b.rate||0); return at - bt; }); break;
+      default: list.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt)); break;
+    }
+    return list;
+  }, [materials, matFilterCat, matFilterVendor, matSearch, matSortBy]);
 
-  const matCategories = useMemo(() => [...new Set(materials.map(m => m.category).filter(Boolean))].sort(), [materials]);
+  const matCategories = useMemo(() => [...new Set(materials.filter(m => m.category !== 'Subcontractor Payment').map(m => m.category).filter(Boolean))].sort(), [materials]);
+  const matVendors = useMemo(() => [...new Set(materials.filter(m => m.category !== 'Subcontractor Payment' && (m.received||0) > 0 && m.vendor).map(m => m.vendor))].sort(), [materials]);
   const matTotalSpent = filteredMaterials.filter(m => (m.received || 0) > 0).reduce((s, m) => s + (m.received || 0) * (m.rate || 0), 0);
   const matTotalReceived = filteredMaterials.reduce((s, m) => s + (m.received || 0), 0);
+
+  // Material vendor-wise summary
+  const matVendorSummary = useMemo(() => {
+    const vm = {};
+    filteredMaterials.forEach(m => {
+      if ((m.received||0) > 0 && m.vendor) {
+        if (!vm[m.vendor]) vm[m.vendor] = { vendor: m.vendor, totalCost: 0, totalQty: 0, items: {}, txCount: 0 };
+        vm[m.vendor].totalQty += (m.received||0);
+        vm[m.vendor].totalCost += (m.received||0) * (m.rate||0);
+        vm[m.vendor].txCount += 1;
+        const mk = `${m.name} (${m.unit})`;
+        if (!vm[m.vendor].items[mk]) vm[m.vendor].items[mk] = { qty: 0, cost: 0 };
+        vm[m.vendor].items[mk].qty += (m.received||0);
+        vm[m.vendor].items[mk].cost += (m.received||0) * (m.rate||0);
+      }
+    });
+    return Object.values(vm).sort((a,b) => b.totalCost - a.totalCost);
+  }, [filteredMaterials]);
+
+  // Material category-wise summary
+  const matCatSummary = useMemo(() => {
+    const cm = {};
+    filteredMaterials.forEach(m => {
+      if ((m.received||0) > 0) {
+        if (!cm[m.category]) cm[m.category] = { category: m.category, totalCost: 0, totalQty: 0, txCount: 0, items: {} };
+        cm[m.category].totalQty += (m.received||0);
+        cm[m.category].totalCost += (m.received||0) * (m.rate||0);
+        cm[m.category].txCount += 1;
+        const mk = `${m.name} (${m.unit})`;
+        if (!cm[m.category].items[mk]) cm[m.category].items[mk] = { qty: 0, cost: 0 };
+        cm[m.category].items[mk].qty += (m.received||0);
+        cm[m.category].items[mk].cost += (m.received||0) * (m.rate||0);
+      }
+    });
+    return Object.values(cm).sort((a,b) => b.totalCost - a.totalCost);
+  }, [filteredMaterials]);
 
   // Category options
   const expenseCategories = useMemo(() => [...new Set(expenses.map(e => e.category).filter(Boolean))].sort(), [expenses]);
@@ -183,6 +234,20 @@ export default function PublicLedgerPage() {
           .share-btn:hover { background: var(--gold); color: #fff; }
           .ledger-vendor-row { display:grid; grid-template-columns:1fr auto auto auto; gap:12px; align-items:center; padding:10px 14px; border-radius:8px; border:1px solid var(--hairline); background:var(--paper); transition:all .15s; }
           .ledger-vendor-row:hover { border-color:var(--gold); background:var(--gold-light); }
+          .ledger-summary-panel { background:var(--paper); border:1px solid var(--hairline); border-radius:var(--radius); overflow:hidden; margin-bottom:var(--sp-lg); }
+          .ledger-summary-toggle { display:flex; align-items:center; gap:6px; padding:4px 10px; border-radius:6px; font-size:.65rem; font-weight:700; cursor:pointer; border:1.5px solid var(--hairline); background:var(--paper); color:var(--concrete); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:.04em; transition:all .15s; }
+          .ledger-summary-toggle.active { border-color:var(--gold); background:var(--gold); color:#fff; }
+          .ledger-summary-toggle:hover:not(.active) { border-color:var(--gold); color:var(--gold-dark); }
+          .ledger-summary-card { padding:14px 18px; border-bottom:1px solid var(--hairline); transition:background .15s; }
+          .ledger-summary-card:last-child { border-bottom:none; }
+          .ledger-summary-card:hover { background:var(--gold-light); }
+          .ledger-summary-sub { font-size:.65rem; color:var(--concrete); font-family:var(--font-mono); display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
+          .ledger-summary-sub-item { background:var(--paper-2); padding:3px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px; }
+          .ledger-filter-select { padding:5px 10px; border-radius:6px; border:1px solid var(--hairline); font-size:.75rem; background:var(--paper-2); cursor:pointer; transition:border-color .15s; }
+          .ledger-filter-select:focus { border-color:var(--gold); outline:none; }
+          .ledger-active-chip { display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:20px; font-size:.65rem; font-weight:700; background:var(--gold-light); color:var(--gold-dark); border:1px solid var(--gold); font-family:var(--font-mono); }
+          .ledger-active-chip button { background:none; border:none; cursor:pointer; color:var(--gold-dark); font-size:.7rem; padding:0; line-height:1; opacity:.7; }
+          .ledger-active-chip button:hover { opacity:1; color:var(--rust); }
           @media (max-width: 600px) { .ledger-kpi-row { grid-template-columns: 1fr 1fr; } }
         `}} />
 
@@ -218,9 +283,21 @@ export default function PublicLedgerPage() {
 
           {viewType === 'materials' && (
             <>
-              <select value={matFilterCat} onChange={e => setMatFilterCat(e.target.value)} style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--hairline)', fontSize: '.75rem', background: 'var(--paper-2)' }}>
+              <select className="ledger-filter-select" value={matFilterCat} onChange={e => setMatFilterCat(e.target.value)}>
                 <option value="">All Categories</option>
                 {matCategories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select className="ledger-filter-select" value={matFilterVendor} onChange={e => setMatFilterVendor(e.target.value)}>
+                <option value="">All Vendors</option>
+                {matVendors.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <select className="ledger-filter-select" value={matSortBy} onChange={e => setMatSortBy(e.target.value)}>
+                <option value="date-desc">Date: New → Old</option>
+                <option value="date-asc">Date: Old → New</option>
+                <option value="name-asc">Name: A → Z</option>
+                <option value="name-desc">Name: Z → A</option>
+                <option value="total-desc">Total: High → Low</option>
+                <option value="total-asc">Total: Low → High</option>
               </select>
               <input value={matSearch} onChange={e => setMatSearch(e.target.value)} placeholder="Search material..." style={{ padding: '5px 10px', borderRadius: 6, border: '1px solid var(--hairline)', fontSize: '.75rem', background: 'var(--paper-2)', width: 140 }} />
             </>
@@ -233,8 +310,12 @@ export default function PublicLedgerPage() {
             </select>
           )}
 
-          {(localCategory || localContactId || matFilterCat || matSearch) && (
-            <button onClick={() => { setLocalCategory(''); setLocalContactId(''); setMatFilterCat(''); setMatSearch(''); }} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--hairline)', fontSize: '.7rem', fontWeight: 600, cursor: 'pointer', background: 'var(--paper)', color: 'var(--concrete)' }}>Clear</button>
+          {(localCategory || localContactId || matFilterCat || matFilterVendor || matSearch) && (
+            <>
+              {matFilterCat && <span className="ledger-active-chip">📂 {matFilterCat} <button onClick={() => setMatFilterCat('')}>✕</button></span>}
+              {matFilterVendor && <span className="ledger-active-chip">🏢 {matFilterVendor} <button onClick={() => setMatFilterVendor('')}>✕</button></span>}
+              <button onClick={() => { setLocalCategory(''); setLocalContactId(''); setMatFilterCat(''); setMatFilterVendor(''); setMatSearch(''); }} style={{ padding: '4px 10px', borderRadius: 6, border: '1px solid var(--rust)', fontSize: '.7rem', fontWeight: 600, cursor: 'pointer', background: 'var(--rust-light)', color: 'var(--rust)', transition: 'all .15s' }}>Clear All</button>
+            </>
           )}
         </div>
 
@@ -418,10 +499,81 @@ export default function PublicLedgerPage() {
               </div>
               <div className="ledger-kpi">
                 <div className="ledger-kpi-accent" style={{ background: 'var(--grad-amber)' }} />
+                <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--concrete)' }}>Vendors</span>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{matVendorSummary.length}</div>
+              </div>
+              <div className="ledger-kpi">
+                <div className="ledger-kpi-accent" style={{ background: 'var(--grad-rust)' }} />
                 <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--concrete)' }}>Transactions</span>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{filteredMaterials.length}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{filteredMaterials.length}</div>
               </div>
             </div>
+
+            {/* Summary view toggle buttons */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 'var(--sp-md)', flexWrap: 'wrap' }}>
+              <button className={`ledger-summary-toggle ${matSummaryView === 'vendor' ? 'active' : ''}`} onClick={() => setMatSummaryView(v => v === 'vendor' ? '' : 'vendor')}>🏢 Vendor Summary</button>
+              <button className={`ledger-summary-toggle ${matSummaryView === 'category' ? 'active' : ''}`} onClick={() => setMatSummaryView(v => v === 'category' ? '' : 'category')}>📂 Category Summary</button>
+            </div>
+
+            {/* Vendor-wise Summary */}
+            {matSummaryView === 'vendor' && (
+              <div className="ledger-summary-panel" style={{ marginBottom: 'var(--sp-lg)' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '2px solid var(--hairline)' }}>
+                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '.05em', fontFamily: 'var(--font-mono)' }}>🏢 Vendor-wise Purchase Summary</div>
+                  <div style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{matVendorSummary.length} vendors · Total: {fmtAmt(matTotalSpent)}</div>
+                </div>
+                <div style={{ maxHeight: 350, overflowY: 'auto' }}>
+                  {matVendorSummary.map((v, i) => (
+                    <div key={i} className="ledger-summary-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: '.82rem', fontWeight: 700, color: 'var(--ink)' }}>🏢 {v.vendor}</div>
+                          <div style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{v.txCount} purchase(s)</div>
+                        </div>
+                        <div style={{ fontSize: '.9rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(v.totalCost)}</div>
+                      </div>
+                      <div className="ledger-summary-sub">
+                        {Object.entries(v.items).map(([mat, d]) => (
+                          <span key={mat} className="ledger-summary-sub-item">{mat}: {d.qty.toFixed(1)} — {fmtAmt(d.cost)}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {matVendorSummary.length === 0 && <div style={{ padding: 20, textAlign: 'center', color: 'var(--concrete)', fontSize: '.78rem' }}>No vendor data available.</div>}
+                </div>
+              </div>
+            )}
+
+            {/* Category-wise Summary */}
+            {matSummaryView === 'category' && (
+              <div className="ledger-summary-panel" style={{ marginBottom: 'var(--sp-lg)' }}>
+                <div style={{ padding: '14px 18px', borderBottom: '2px solid var(--hairline)' }}>
+                  <div style={{ fontSize: '.72rem', fontWeight: 700, color: 'var(--ink)', textTransform: 'uppercase', letterSpacing: '.05em', fontFamily: 'var(--font-mono)' }}>📂 Category-wise Purchase Summary</div>
+                  <div style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{matCatSummary.length} categories · Total: {fmtAmt(matTotalSpent)}</div>
+                </div>
+                <div style={{ maxHeight: 350, overflowY: 'auto' }}>
+                  {matCatSummary.map((c, i) => (
+                    <div key={i} className="ledger-summary-card">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: '.6rem', fontWeight: 700, padding: '2px 6px', borderRadius: 4, background: (CAT_COLORS[c.category] || '#ccc') + '18', color: CAT_COLORS[c.category] || 'var(--concrete)', textTransform: 'uppercase' }}>{c.category}</span>
+                            <span style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{c.txCount} receipt(s)</span>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '.9rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(c.totalCost)}</div>
+                      </div>
+                      <div className="ledger-summary-sub">
+                        {Object.entries(c.items).map(([mat, d]) => (
+                          <span key={mat} className="ledger-summary-sub-item">{mat}: {d.qty.toFixed(1)} — {fmtAmt(d.cost)}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                  {matCatSummary.length === 0 && <div style={{ padding: 20, textAlign: 'center', color: 'var(--concrete)', fontSize: '.78rem' }}>No category data available.</div>}
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {filteredMaterials.length === 0 && <div className="empty-state"><p>No material transactions found.</p></div>}
