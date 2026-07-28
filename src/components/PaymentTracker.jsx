@@ -263,6 +263,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
         .pay-progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
         .pay-vendor-row { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:8px; border:1px solid var(--hairline); background:var(--paper); transition:all .15s; }
         .pay-vendor-row:hover { border-color:var(--gold); background:var(--gold-light); }
+        .pay-vendor-tr:hover { background: var(--gold-light) !important; }
         .pay-totals-banner { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; background:var(--paper); border:1.5px solid var(--gold); border-radius:var(--radius); padding:14px 18px; margin-bottom:var(--sp-lg); }
         .pay-totals-item { display:flex; flex-direction:column; gap:2px; }
       `}} />
@@ -368,42 +369,53 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
             <span style={{ fontSize: '.75rem', color: 'var(--gold-dark)', fontWeight: 700 }}>{showVendorSummary ? '▲ Hide' : '▼ Show'}</span>
           </div>
           {showVendorSummary && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {/* Header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', padding: '4px 10px', borderBottom: '1px solid var(--hairline)', marginBottom: 4 }}>
-                <span>Contact</span><span style={{ textAlign: 'right' }}>Billed</span><span style={{ textAlign: 'right' }}>We Paid</span><span style={{ textAlign: 'right' }}>Client Paid</span><span style={{ textAlign: 'right' }}>Total Paid</span><span style={{ textAlign: 'right' }}>Outstanding</span>
-              </div>
-              {vendorSummaryEntries.map((v, i) => (
-                <div key={i} className="pay-vendor-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, alignItems: 'center' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '.82rem', color: 'var(--ink)' }}>{v.name}</div>
-                    <div style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{v.role} · {v.count} milestone{v.count !== 1 ? 's' : ''}</div>
-                  </div>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.billed)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.wePaid > 0 ? 'var(--amber)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.wePaid)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.directPaid > 0 ? 'var(--blue)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.directPaid)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.paid > 0 ? 'var(--green)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.paid)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.billed - v.paid > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.billed - v.paid)}</span>
-                </div>
-              ))}
-              {/* Totals row */}
-              {(() => {
-                const tBilled = vendorSummaryEntries.reduce((s, v) => s + v.billed, 0);
-                const tWePaid = vendorSummaryEntries.reduce((s, v) => s + (v.wePaid || 0), 0);
-                const tDirectPaid = vendorSummaryEntries.reduce((s, v) => s + (v.directPaid || 0), 0);
-                const tPaid = vendorSummaryEntries.reduce((s, v) => s + v.paid, 0);
-                const tOut = tBilled - tPaid;
-                return (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, alignItems: 'center', padding: '8px 10px', borderTop: '2px solid var(--hairline)', marginTop: 4 }}>
-                    <span style={{ fontWeight: 800, fontSize: '.75rem', color: 'var(--ink)' }}>Total</span>
-                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tBilled)}</span>
-                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tWePaid > 0 ? 'var(--amber)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tWePaid)}</span>
-                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tDirectPaid > 0 ? 'var(--blue)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tDirectPaid)}</span>
-                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tPaid > 0 ? 'var(--green)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tPaid)}</span>
-                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tOut > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tOut)}</span>
-                  </div>
-                );
-              })()}
+            <div style={{ marginTop: 12, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'right' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--hairline)', fontSize: '.65rem', fontWeight: 800, color: 'var(--concrete)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
+                    <th style={{ textAlign: 'left', padding: '8px 12px' }}>Contact</th>
+                    <th style={{ padding: '8px 12px' }}>Billed</th>
+                    <th style={{ padding: '8px 12px' }}>We Paid</th>
+                    <th style={{ padding: '8px 12px' }}>Client Paid</th>
+                    <th style={{ padding: '8px 12px' }}>Total Paid</th>
+                    <th style={{ padding: '8px 12px' }}>Outstanding</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendorSummaryEntries.map((v, i) => (
+                    <tr key={i} className="pay-vendor-tr" style={{ borderBottom: '1px solid var(--hairline)', background: 'var(--paper)', transition: 'all 0.15s', cursor: 'default' }}>
+                      <td style={{ textAlign: 'left', padding: '12px' }}>
+                        <div style={{ fontWeight: 800, fontSize: '.85rem', color: 'var(--ink)' }}>{v.name}</div>
+                        <div style={{ fontSize: '.65rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)', marginTop: 2 }}>{v.role} · {v.count} milestone{v.count !== 1 ? 's' : ''}</div>
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: 800, fontSize: '.8rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(v.billed)}</td>
+                      <td style={{ padding: '12px', fontWeight: 800, fontSize: '.8rem', color: v.wePaid > 0 ? 'var(--amber)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(v.wePaid)}</td>
+                      <td style={{ padding: '12px', fontWeight: 800, fontSize: '.8rem', color: v.directPaid > 0 ? 'var(--blue)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(v.directPaid)}</td>
+                      <td style={{ padding: '12px', fontWeight: 800, fontSize: '.8rem', color: v.paid > 0 ? 'var(--green)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(v.paid)}</td>
+                      <td style={{ padding: '12px', fontWeight: 800, fontSize: '.8rem', color: v.billed - v.paid > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(v.billed - v.paid)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot>
+                  {(() => {
+                    const tBilled = vendorSummaryEntries.reduce((s, v) => s + v.billed, 0);
+                    const tWePaid = vendorSummaryEntries.reduce((s, v) => s + (v.wePaid || 0), 0);
+                    const tDirectPaid = vendorSummaryEntries.reduce((s, v) => s + (v.directPaid || 0), 0);
+                    const tPaid = vendorSummaryEntries.reduce((s, v) => s + v.paid, 0);
+                    const tOut = tBilled - tPaid;
+                    return (
+                      <tr style={{ background: 'var(--paper)' }}>
+                        <td style={{ textAlign: 'left', padding: '14px 12px', fontWeight: 800, fontSize: '.75rem', color: 'var(--ink)' }}>GRAND TOTAL</td>
+                        <td style={{ padding: '14px 12px', fontWeight: 800, fontSize: '.85rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(tBilled)}</td>
+                        <td style={{ padding: '14px 12px', fontWeight: 800, fontSize: '.85rem', color: tWePaid > 0 ? 'var(--amber)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(tWePaid)}</td>
+                        <td style={{ padding: '14px 12px', fontWeight: 800, fontSize: '.85rem', color: tDirectPaid > 0 ? 'var(--blue)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(tDirectPaid)}</td>
+                        <td style={{ padding: '14px 12px', fontWeight: 800, fontSize: '.85rem', color: tPaid > 0 ? 'var(--green)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(tPaid)}</td>
+                        <td style={{ padding: '14px 12px', fontWeight: 800, fontSize: '.85rem', color: tOut > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{fmtAmt(tOut)}</td>
+                      </tr>
+                    );
+                  })()}
+                </tfoot>
+              </table>
             </div>
           )}
         </div>
