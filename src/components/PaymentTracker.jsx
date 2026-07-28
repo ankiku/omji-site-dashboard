@@ -65,6 +65,9 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       order: parseInt(form.order) || payments.length + 1,
       billUrls: form.billUrls || []
     };
+    if (data.status === 'Paid' && (!data.paidAmount || data.paidAmount === 0)) {
+      data.paidAmount = data.amount;
+    }
     if (editId) {
       await updatePayment(projectId, editId, data);
     } else {
@@ -124,7 +127,13 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
   const fmtAmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
 
   const modeFilteredPayments = useMemo(() => {
-    return payments.filter(p => {
+    return payments.map(p => {
+      // Auto-correct missing paidAmount if marked as 'Paid'
+      if (p.status === 'Paid' && (!p.paidAmount || p.paidAmount === 0)) {
+        return { ...p, paidAmount: p.amount || 0 };
+      }
+      return p;
+    }).filter(p => {
       if (mode === 'vendor') return ['Vendor Disbursement', 'Contractor Disbursement', 'Client Direct Payment (to Vendor)'].includes(p.type);
       if (mode === 'client') return ['Client Payment', 'Advance', 'Retention', 'Final Bill'].includes(p.type);
       return true;
