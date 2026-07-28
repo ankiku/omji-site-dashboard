@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useConfirmDialog } from './ConfirmDialog';
 import { useToast } from '../contexts/ToastContext';
+import VendorReportModal from './VendorReportModal';
 
 const ROLES = ['Client', 'Architect', 'Contractor', 'Vendor', 'Supervisor', 'Engineer', 'Consultant', 'Other'];
 
@@ -9,6 +10,7 @@ export default function ContactsDirectory({ projectId, canEdit, contacts, addCon
   const [editId, setEditId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('');
+  const [reportContact, setReportContact] = useState(null);
   const [form, setForm] = useState({ name: '', role: 'Client', phone: '', email: '', company: '', notes: '' });
   const toast = useToast();
   const { confirm, dialog } = useConfirmDialog();
@@ -115,6 +117,7 @@ export default function ContactsDirectory({ projectId, canEdit, contacts, addCon
             </div>
             {canEdit && (
               <div className="contact-card-actions">
+                <button className="expense-action-btn" onClick={() => setReportContact(c)} title="View Report">📊 Report</button>
                 <button className="expense-action-btn" onClick={() => handleEdit(c)} title="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
                 <button className="expense-action-btn del" onClick={() => handleDelete(c)} title="Delete"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
               </div>
@@ -122,6 +125,14 @@ export default function ContactsDirectory({ projectId, canEdit, contacts, addCon
           </div>
         ))}
       </div>
+
+      {reportContact && (
+        <VendorReportModal 
+          projectId={projectId} 
+          contact={reportContact} 
+          onClose={() => setReportContact(null)} 
+        />
+      )}
     </div>
   );
 }
