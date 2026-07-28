@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { addMaterial, updateMaterial, deleteMaterial, subscribeToMaterials, uploadPhoto } from '../services/localStorageService';
+import { addMaterial, updateMaterial, deleteMaterial, subscribeToMaterials, uploadPhoto, addPayment, updatePayment, subscribeToPayments } from '../services/localStorageService';
 import { useToast } from '../contexts/ToastContext';
 import { useConfirmDialog } from './ConfirmDialog';
 import { exportTableToPDF } from '../utils/pdfExporter';
@@ -42,6 +42,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
   const toast = useToast();
   const { confirm, dialog } = useConfirmDialog();
   const [materials, setMaterials] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filterType, setFilterType] = useState('All');
@@ -77,12 +78,17 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
   const emptyForm = () => ({
     name: '', category: 'Cement', unit: 'Bags', txType: 'Receipt',
     quantity: '', rate: '', vendor: '', date: new Date().toISOString().split('T')[0],
-    notes: '', billUrls: [], rmcGrade: 'M25', subcontractorName: '', subcontractorAmount: ''
+    notes: '', billUrls: [], rmcGrade: 'M25', subcontractorName: '', subcontractorAmount: '',
+    paymentResponsibility: 'None', contactId: ''
   });
 
   const [form, setForm] = useState(emptyForm());
 
-  useEffect(() => subscribeToMaterials(projectId, setMaterials), [projectId]);
+  useEffect(() => {
+    const unsubMat = subscribeToMaterials(projectId, setMaterials);
+    const unsubPay = subscribeToPayments(projectId, setPayments);
+    return () => { unsubMat(); unsubPay(); };
+  }, [projectId]);
 
   const resetForm = () => { setForm(emptyForm()); setEditId(null); setShowForm(false); };
 
@@ -126,7 +132,9 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         received: 0,
         consumed: 0,
         subcontractorPayment: amt,
-        billUrls: form.billUrls || []
+        billUrls: form.billUrls || [],
+        contactId: form.contactId,
+        paymentResponsibility: form.paymentResponsibility
       };
       try {
         if (editId) { await updateMaterial(projectId, editId, data); toast.success('Updated'); }
@@ -139,10 +147,46 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
     const qty = parseFloat(form.quantity) || 0;
     if (qty <= 0) { toast.error('Quantity must be > 0'); return; }
 
-    // Determine effective name (for RMC, append grade)
-    const effectiveName = form.category === 'RMC'
-      ? `RMC — ${form.rmcGrade}`
-      : form.name;
+    const effectiveName = form.category === 'RMC' ? `RMC — ${form.rmcGrade}` : form.name;
+    const totalAmount = qty * (parseFloat(form.rate) || 0);
+
+    let linkedPaymentId = form.linkedPaymentId;
+
+    if (form.txType === 'Receipt' && form.paymentResponsibility !== 'None' && form.contactId && totalAmount > 0) {
+      const isClientDirect = form.paymentResponsibility === 'Client';
+      const paymentData = {
+        milestone: `Material Bill: ${effectiveName} (${qty} ${form.unit})`,
+        type: isClientDirect ? 'Client Direct Payment (to Vendor)' : 'Vendor Disbursement',
+        amount: String(totalAmount),
+        paidAmount: '0',
+        status: 'Pending',
+        dueDate: form.date,
+        paidDate: '',
+        linkedPhase: '',
+        contactId: isClientDirect ? '' : form.contactId,
+        vendorContactId: isClientDirect ? form.contactId : '',
+        billUrls: form.billUrls || [],
+        order: String(Date.now()).slice(-5)
+      };
+
+      try {
+        if (linkedPaymentId) {
+          // If we already have a linked payment, update it
+          // Let's retrieve existing to not overwrite paidAmount/status if possible?
+          // Since we might not have it loaded synchronously, we just update core fields.
+          const existing = payments.find(p => p.id === linkedPaymentId);
+          if (existing) {
+             await updatePayment(projectId, linkedPaymentId, { ...existing, ...paymentData, paidAmount: existing.paidAmount, status: existing.status });
+          } else {
+             await updatePayment(projectId, linkedPaymentId, paymentData);
+          }
+        } else {
+          linkedPaymentId = await addPayment(projectId, paymentData);
+        }
+      } catch (err) {
+        console.error('Failed to create/update linked payment', err);
+      }
+    }
 
     const data = {
       name: effectiveName,
@@ -155,7 +199,10 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
       rate: form.txType === 'Receipt' ? (parseFloat(form.rate) || 0) : 0,
       received: form.txType === 'Receipt' ? qty : 0,
       consumed: form.txType === 'Consumption' ? qty : 0,
-      billUrls: form.billUrls || []
+      billUrls: form.billUrls || [],
+      contactId: form.contactId,
+      paymentResponsibility: form.paymentResponsibility,
+      linkedPaymentId
     };
     try {
       if (editId) { await updateMaterial(projectId, editId, data); toast.success('Updated'); }
@@ -180,7 +227,10 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
       billUrls: m.billUrls || [],
       rmcGrade: m.rmcGrade || 'M25',
       subcontractorName: m.vendor || '',
-      subcontractorAmount: String(m.subcontractorPayment || '')
+      subcontractorAmount: String(m.subcontractorPayment || ''),
+      contactId: m.contactId || '',
+      paymentResponsibility: m.paymentResponsibility || 'None',
+      linkedPaymentId: m.linkedPaymentId || null
     });
     setEditId(m.id);
     setShowForm(true);
@@ -841,6 +891,11 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                       {m.date && <span>📅 {m.date}</span>}
                       {m.vendor && <span>🏢 {m.vendor}</span>}
                       {m.notes && <span>📝 {m.notes}</span>}
+                      {m.linkedPaymentId && (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'var(--paper-2)', padding: '2px 6px', borderRadius: 4, border: '1px solid var(--hairline)', fontSize: '0.62rem', fontWeight: 600, color: 'var(--ink)' }}>
+                          🔗 {payments.find(p => p.id === m.linkedPaymentId)?.status || 'Pending'}
+                        </span>
+                      )}
                       {m.billUrls && m.billUrls.length > 0 && m.billUrls.map((url, i) => {
                         const isPdf = url.toLowerCase().endsWith('.pdf');
                         return (
@@ -963,19 +1018,41 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                     <div className="form-group"><label>Date *</label><input className="form-input" type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required /></div>
                   </div>
 
-                  {/* Vendor (receipt only) + Rate */}
+                  {/* Vendor (receipt only) + Rate + Payment Responsibility */}
                   {form.txType === 'Receipt' && (
-                    <div className="form-grid-2">
-                      <div className="form-group">
-                        <label>Supplier / Vendor</label>
-                        <input className="form-input" list="mt-vendor-list" value={form.vendor} onChange={e => setForm(p => ({ ...p, vendor: e.target.value }))} placeholder="Select or type vendor name" />
-                        <datalist id="mt-vendor-list">
-                          {vendorContacts.map(c => <option key={c.id} value={c.name}>{c.name} — {c.company || c.role}</option>)}
-                        </datalist>
-                        {vendorContacts.length > 0 && <div style={{ fontSize: '.6rem', color: 'var(--concrete)', marginTop: 3 }}>💡 {vendorContacts.length} vendor(s) from contacts</div>}
+                    <>
+                      <div className="form-grid-3">
+                        <div className="form-group">
+                          <label>Supplier / Vendor *</label>
+                          <select className="form-select" value={form.contactId} onChange={e => {
+                            const cid = e.target.value;
+                            const cname = vendorContacts.find(c => c.id === cid)?.name || '';
+                            setForm(p => ({ ...p, contactId: cid, vendor: cname }));
+                          }} required>
+                            <option value="">-- Select Vendor --</option>
+                            {vendorContacts.map(c => <option key={c.id} value={c.id}>{c.name} — {c.company || c.role}</option>)}
+                          </select>
+                        </div>
+                        <div className="form-group">
+                          <label>Rate (₹/unit)</label>
+                          <input className="form-input" type="number" min="0" step="any" value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} />
+                        </div>
+                        <div className="form-group">
+                          <label>Payment Responsibility</label>
+                          <select className="form-select" value={form.paymentResponsibility} onChange={e => setForm(p => ({ ...p, paymentResponsibility: e.target.value }))}>
+                            <option value="None">None (Don't auto-link to ledger)</option>
+                            <option value="Omji">Payable by Omji Construction</option>
+                            <option value="Client">Payable by Client (Direct Pay)</option>
+                          </select>
+                        </div>
                       </div>
-                      <div className="form-group"><label>Rate (₹/unit)</label><input className="form-input" type="number" min="0" step="any" value={form.rate} onChange={e => setForm(p => ({ ...p, rate: e.target.value }))} /></div>
-                    </div>
+                      
+                      {form.paymentResponsibility !== 'None' && (
+                        <div style={{ background: 'var(--paper-2)', padding: '10px 12px', borderRadius: '6px', border: '1px dashed var(--gold)', fontSize: '0.72rem', color: 'var(--concrete)', marginBottom: '14px', marginTop: '-4px' }}>
+                          💡 A <strong>{form.paymentResponsibility === 'Omji' ? 'Vendor Disbursement' : 'Client Direct Payment'}</strong> ledger entry will be automatically generated and linked to this bill.
+                        </div>
+                      )}
+                    </>
                   )}
 
                   <div className="form-group"><label>{form.txType === 'Receipt' ? 'Notes (Challan / Invoice)' : 'Usage Location'}</label><input className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} /></div>
