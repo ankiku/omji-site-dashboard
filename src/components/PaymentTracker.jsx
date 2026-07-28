@@ -3,7 +3,7 @@ import { addPayment, updatePayment, deletePayment, subscribeToPayments, uploadPh
 import { exportTableToPDF } from '../utils/pdfExporter';
 import { useToast } from '../contexts/ToastContext';
 
-const PAY_TYPES = ['Client Payment', 'Contractor Disbursement', 'Vendor Disbursement', 'Client Direct Payment (to Vendor)', 'Advance', 'Retention', 'Final Bill'];
+const PAY_TYPES = ['Client Payment', 'Contractor Disbursement', 'Vendor Disbursement', 'Client Direct Payment (to Vendor)', 'Advance', 'Retention', 'Final Bill', 'Vendor', 'Omji Cash', 'Omji RTGS'];
 const PAY_STATUS = ['Pending', 'Partially Paid', 'Paid', 'Overdue'];
 
 export default function PaymentTracker({ projectId, canEdit, contacts = [], project, mode = 'all' }) {
@@ -17,7 +17,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
   const [form, setForm] = useState({
     milestone: '',
-    type: mode === 'vendor' ? 'Vendor Disbursement' : 'Client Payment',
+    type: mode === 'vendor' ? 'Vendor' : 'Client Payment',
     amount: '',
     paidAmount: '',
     status: 'Pending',
@@ -40,7 +40,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
   const resetForm = () => {
     setForm({
       milestone: '',
-      type: mode === 'vendor' ? 'Vendor Disbursement' : 'Client Payment',
+      type: mode === 'vendor' ? 'Vendor' : 'Client Payment',
       amount: '',
       paidAmount: '',
       status: 'Pending',
@@ -135,7 +135,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       }
       return p;
     }).filter(p => {
-      if (mode === 'vendor') return ['Vendor Disbursement', 'Contractor Disbursement'].includes(p.type);
+      if (mode === 'vendor') return ['Vendor', 'Omji Cash', 'Omji RTGS', 'Vendor Disbursement', 'Contractor Disbursement', 'Material Bill', 'Asset Purchase', 'Expense'].includes(p.type);
       if (mode === 'client') return ['Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct Payment (to Vendor)'].includes(p.type);
       return true;
     });
@@ -185,6 +185,8 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
         list = list.filter(p => p.type.includes('Direct Payment'));
       } else if (filterType === 'Contractor') {
         list = list.filter(p => p.type.includes('Contractor Disbursement'));
+      } else if (filterType === 'Vendor') {
+        list = list.filter(p => p.type === 'Vendor' || p.type === 'Vendor Disbursement' || p.type === 'Contractor Disbursement' || p.type === 'Material Bill');
       } else {
         list = list.filter(p => p.type === filterType);
       }
@@ -482,9 +484,9 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
             {project?.slug && (
               <button onClick={() => { const url = `${window.location.origin}/p/${project.slug}/ledger?view=payments`; navigator.clipboard.writeText(url); toast.success('Shareable link copied!'); }} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>🔗 Share</button>
             )}
-            {(mode === 'vendor' ? ['All', 'Contractor', 'Vendor Disbursement'] : mode === 'client' ? ['All', 'Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct'] : ['All', 'Client Payment', 'Contractor', 'Vendor Disbursement', 'Client Direct', 'Advance']).map(t => (
+            {(mode === 'vendor' ? ['All', 'Vendor', 'Omji Cash', 'Omji RTGS'] : mode === 'client' ? ['All', 'Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct'] : ['All', 'Client Payment', 'Contractor', 'Vendor Disbursement', 'Client Direct', 'Advance']).map(t => (
               <button key={t} onClick={() => setFilterType(t)} className="btn btn-outline btn-sm" style={{ fontSize: '0.65rem', padding: '3px 8px', border: filterType === t ? '1.5px solid var(--ink)' : '1px solid var(--hairline)', background: filterType === t ? 'var(--ink)' : 'transparent', color: filterType === t ? '#fff' : 'var(--concrete)' }}>
-                {t === 'All' ? 'All' : t === 'Client Payment' ? 'Client' : t === 'Contractor' ? 'Contractor' : t === 'Vendor Disbursement' ? 'Vendor' : t === 'Client Direct' ? 'Direct Pay' : t}
+                {t === 'All' ? 'All' : t === 'Client Payment' ? 'Client' : t === 'Client Direct' ? 'Direct Pay' : t}
               </button>
             ))}
           </div>
@@ -591,7 +593,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
                 <div className="form-group">
                   <label>Billing Type</label>
                   <select className="form-select" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                    {PAY_TYPES.filter(t => mode === 'all' || (mode === 'vendor' ? ['Vendor Disbursement', 'Contractor Disbursement'].includes(t) : ['Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct Payment (to Vendor)'].includes(t))).map(t => <option key={t} value={t}>{t}</option>)}
+                      {PAY_TYPES.filter(t => mode === 'all' || (mode === 'vendor' ? ['Vendor', 'Omji Cash', 'Omji RTGS'].includes(t) : ['Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct Payment (to Vendor)'].includes(t))).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="form-group">

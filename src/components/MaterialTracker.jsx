@@ -128,7 +128,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         const isClientDirect = form.paymentResponsibility === 'Client';
         const paymentData = {
           milestone: `Subcontractor Payment: ${form.subcontractorName || 'Unknown'}`,
-          type: isClientDirect ? 'Client Direct Payment (to Vendor)' : 'Contractor Disbursement',
+          type: isClientDirect ? 'Client Direct Payment (to Vendor)' : 'Vendor',
           amount: String(amt),
           paidAmount: '0',
           status: 'Pending',
@@ -193,7 +193,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
       const isClientDirect = form.paymentResponsibility === 'Client';
       const paymentData = {
         milestone: `Material Bill: ${effectiveName} (${qty} ${form.unit})`,
-        type: isClientDirect ? 'Client Direct Payment (to Vendor)' : 'Vendor Disbursement',
+        type: isClientDirect ? 'Client Direct Payment (to Vendor)' : 'Vendor',
         amount: String(totalAmount),
         paidAmount: '0',
         status: 'Pending',
