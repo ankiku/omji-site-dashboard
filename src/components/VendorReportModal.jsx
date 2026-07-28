@@ -17,7 +17,9 @@ export default function VendorReportModal({ projectId, contact, onClose }) {
     totalAmountPaid,
     totalDue,
     directPaidByClient,
-    paidByOmji
+    paidByOmji,
+    vendorMaterials,
+    vendorPayments
   } = useMemo(() => {
     // 1. Calculate Material Received & Cost for this vendor
     // Materials associated with this contact:
