@@ -208,7 +208,16 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       const pPaid = p.paidAmount || 0;
       tBilled += pAmt;
       tPaid += pPaid;
-      const attachmentLink = p.photo ? `<a href="${p.photo}" target="_blank" style="color:#3b82f6;text-decoration:none;font-weight:600;">View Bill</a>` : '-';
+      
+      let attachmentLink = '-';
+      if (p.billUrls && p.billUrls.length > 0) {
+        attachmentLink = p.billUrls.map((url, i) => {
+          const isPdf = url.toLowerCase().endsWith('.pdf');
+          const label = p.billUrls.length > 1 ? `Bill ${i + 1}` : 'View Bill';
+          return `<a href="${url}" target="_blank" style="color:#3b82f6;text-decoration:none;font-weight:600;">${label}</a>`;
+        }).join(', ');
+      }
+
       return [
         p.milestone || '', p.type || '', p.status || '', contactName,
         p.dueDate || '-', p.paidDate || '-', p.linkedPhase || '-',
