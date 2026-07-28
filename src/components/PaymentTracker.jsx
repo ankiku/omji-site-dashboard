@@ -282,35 +282,39 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
       {/* ── Grand Totals Banner ── */}
       <div className="pay-totals-banner">
+        {/* ── Dynamic Totals Banner ── */}
         <div className="pay-totals-item">
-          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Grand Total Billed</span>
+          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>{mode === 'client' ? 'Total Invoiced' : 'Total Billed'}</span>
           <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)' }}>{fmtAmt(totalAmount)}</span>
-          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>{payments.length} milestones</span>
+          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>{modeFilteredPayments.length} milestones</span>
         </div>
+        
+        {mode !== 'client' && (
+          <div className="pay-totals-item">
+            <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>We Paid</span>
+            <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)' }}>{fmtAmt(vendorDisbursements)}</span>
+            <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>disbursed by us</span>
+          </div>
+        )}
+
+        {mode !== 'client' && (
+          <div className="pay-totals-item">
+            <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Client Paid</span>
+            <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', fontFamily: 'var(--font-display)' }}>{fmtAmt(directPayments)}</span>
+            <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>direct to vendor</span>
+          </div>
+        )}
+
         <div className="pay-totals-item">
-          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Total Paid</span>
+          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>{mode === 'client' ? 'Total Collected' : 'Total Paid'}</span>
           <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--green)', fontFamily: 'var(--font-display)' }}>{fmtAmt(totalPaid)}</span>
-          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>{collectionPct}% collected</span>
+          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>{collectionPct}% {mode === 'client' ? 'collected' : 'paid'}</span>
         </div>
+
         <div className="pay-totals-item">
           <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Outstanding</span>
           <span style={{ fontSize: '1.35rem', fontWeight: 800, color: totalPending > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)' }}>{fmtAmt(totalPending)}</span>
           <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>{pendingOverdue > 0 ? `⚠️ ${fmtAmt(pendingOverdue)} overdue` : 'No overdue'}</span>
-        </div>
-        <div className="pay-totals-item">
-          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Client Collections</span>
-          <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--green)', fontFamily: 'var(--font-display)' }}>{fmtAmt(clientCollections)}</span>
-          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>from client</span>
-        </div>
-        <div className="pay-totals-item">
-          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Vendor / Sub Pay</span>
-          <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)' }}>{fmtAmt(vendorDisbursements)}</span>
-          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>disbursed</span>
-        </div>
-        <div className="pay-totals-item">
-          <span className="mono" style={{ fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase' }}>Direct to Vendor</span>
-          <span style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', fontFamily: 'var(--font-display)' }}>{fmtAmt(directPayments)}</span>
-          <span className="mono" style={{ fontSize: '.6rem', color: 'var(--concrete)' }}>client → vendor</span>
         </div>
       </div>
 
