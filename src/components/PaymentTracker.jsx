@@ -141,7 +141,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
     });
   }, [payments, mode]);
 
-  const { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorModeVendorPaid, vendorModeOmjiCash, vendorModeOmjiRtgs, vendorWise } = useMemo(() => {
+  const { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorModeVendorPaid, vendorModeOmjiCash, vendorModeOmjiRtgs, clientModeOmjiCashRtgs, vendorWise } = useMemo(() => {
     const totalAmount = modeFilteredPayments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
     const totalPaid = modeFilteredPayments.reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
     const totalPending = totalAmount - totalPaid;
