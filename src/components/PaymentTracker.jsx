@@ -199,7 +199,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
   }, [modeFilteredPayments, filterType, filterVendor]);
 
   const handleExportPDF = () => {
-    const headers = ['Milestone', 'Type', 'Status', 'Contact', 'Due Date', 'Paid Date', 'Phase', 'Billed', 'Paid', 'Pending'];
+    const headers = ['Milestone', 'Type', 'Status', 'Contact', 'Due Date', 'Paid Date', 'Phase', 'Billed', 'Paid', 'Pending', 'Attachment'];
     let tBilled = 0, tPaid = 0;
     const rows = filteredPayments.map(p => {
       let contactName = '';
@@ -208,10 +208,11 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       const pPaid = p.paidAmount || 0;
       tBilled += pAmt;
       tPaid += pPaid;
+      const attachmentLink = p.photo ? `<a href="${p.photo}" target="_blank" style="color:#3b82f6;text-decoration:none;font-weight:600;">View Bill</a>` : '-';
       return [
         p.milestone || '', p.type || '', p.status || '', contactName,
         p.dueDate || '-', p.paidDate || '-', p.linkedPhase || '-',
-        fmtAmt(pAmt), fmtAmt(pPaid), fmtAmt(pAmt - pPaid)
+        fmtAmt(pAmt), fmtAmt(pPaid), fmtAmt(pAmt - pPaid), attachmentLink
       ];
     });
 
