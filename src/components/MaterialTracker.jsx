@@ -121,6 +121,41 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
     if (form.txType === 'Subcontractor Payment') {
       const amt = parseFloat(form.subcontractorAmount) || 0;
       if (amt <= 0) { toast.error('Amount must be > 0'); return; }
+      let linkedPaymentId = form.linkedPaymentId;
+
+      if (form.paymentResponsibility !== 'None' && form.contactId && amt > 0) {
+        const isClientDirect = form.paymentResponsibility === 'Client';
+        const paymentData = {
+          milestone: `Subcontractor Payment: ${form.subcontractorName || 'Unknown'}`,
+          type: isClientDirect ? 'Client Direct Payment (to Vendor)' : 'Contractor Disbursement',
+          amount: String(amt),
+          paidAmount: '0',
+          status: 'Pending',
+          dueDate: form.date,
+          paidDate: '',
+          linkedPhase: '',
+          contactId: isClientDirect ? '' : form.contactId,
+          vendorContactId: isClientDirect ? form.contactId : '',
+          billUrls: form.billUrls || [],
+          order: String(Date.now()).slice(-5)
+        };
+
+        try {
+          if (linkedPaymentId) {
+            const existing = payments.find(p => p.id === linkedPaymentId);
+            if (existing) {
+               await updatePayment(projectId, linkedPaymentId, { ...existing, ...paymentData, paidAmount: existing.paidAmount, status: existing.status });
+            } else {
+               await updatePayment(projectId, linkedPaymentId, paymentData);
+            }
+          } else {
+            linkedPaymentId = await addPayment(projectId, paymentData);
+          }
+        } catch (err) {
+          console.error('Failed to create/update linked payment', err);
+        }
+      }
+
       const data = {
         name: `Subcontractor: ${form.subcontractorName || 'Payment'}`,
         category: 'Subcontractor Payment',
@@ -134,7 +169,8 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
         subcontractorPayment: amt,
         billUrls: form.billUrls || [],
         contactId: form.contactId,
-        paymentResponsibility: form.paymentResponsibility
+        paymentResponsibility: form.paymentResponsibility,
+        linkedPaymentId
       };
       try {
         if (editId) { await updateMaterial(projectId, editId, data); toast.success('Updated'); }
@@ -944,10 +980,36 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
               {/* Subcontractor Payment Fields */}
               {form.txType === 'Subcontractor Payment' ? (
                 <>
-                  <div className="form-grid-2">
-                    <div className="form-group"><label>Subcontractor Name *</label><input className="form-input" value={form.subcontractorName} onChange={e => setForm(p => ({ ...p, subcontractorName: e.target.value }))} required placeholder="Subcontractor / Labour contractor" list="mt-vendor-list" /></div>
-                    <div className="form-group"><label>Amount Paid (₹) *</label><input className="form-input" type="number" min="0.01" step="any" value={form.subcontractorAmount} onChange={e => setForm(p => ({ ...p, subcontractorAmount: e.target.value }))} required /></div>
+                  <div className="form-grid-3">
+                    <div className="form-group">
+                      <label>Subcontractor Name *</label>
+                      <select className="form-select" value={form.contactId} onChange={e => {
+                        const cid = e.target.value;
+                        const cname = vendorContacts.find(c => c.id === cid)?.name || '';
+                        setForm(p => ({ ...p, contactId: cid, subcontractorName: cname }));
+                      }} required>
+                        <option value="">-- Select Subcontractor --</option>
+                        {vendorContacts.map(c => <option key={c.id} value={c.id}>{c.name} — {c.company || c.role}</option>)}
+                      </select>
+                    </div>
+                    <div className="form-group">
+                      <label>Amount Paid (₹) *</label>
+                      <input className="form-input" type="number" min="0.01" step="any" value={form.subcontractorAmount} onChange={e => setForm(p => ({ ...p, subcontractorAmount: e.target.value }))} required />
+                    </div>
+                    <div className="form-group">
+                      <label>Payment Responsibility</label>
+                      <select className="form-select" value={form.paymentResponsibility} onChange={e => setForm(p => ({ ...p, paymentResponsibility: e.target.value }))}>
+                        <option value="None">None (Don't auto-link to ledger)</option>
+                        <option value="Omji">Payable by Omji Construction</option>
+                        <option value="Client">Payable by Client (Direct Pay)</option>
+                      </select>
+                    </div>
                   </div>
+                  {form.paymentResponsibility !== 'None' && (
+                    <div style={{ background: 'var(--paper-2)', padding: '10px 12px', borderRadius: '6px', border: '1px dashed var(--gold)', fontSize: '0.72rem', color: 'var(--concrete)', marginBottom: '14px', marginTop: '-4px' }}>
+                      💡 A <strong>{form.paymentResponsibility === 'Omji' ? 'Contractor Disbursement' : 'Client Direct Payment'}</strong> ledger entry will be automatically generated and linked to this bill.
+                    </div>
+                  )}
                   <div className="form-grid-2">
                     <div className="form-group"><label>Date *</label><input className="form-input" type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} required /></div>
                     <div className="form-group"><label>Notes</label><input className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder="Work description / challan no." /></div>
