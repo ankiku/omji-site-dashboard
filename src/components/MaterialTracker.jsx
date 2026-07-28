@@ -46,6 +46,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filterType, setFilterType] = useState('All');
+  const [filterPayable, setFilterPayable] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterVendor, setFilterVendor] = useState('');
   const [txSort, setTxSort] = useState('date-desc');
@@ -410,6 +411,7 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
     if (filterType === 'SubPayment' && m.category !== 'Subcontractor Payment') return false;
     if (filterCategory && m.category !== filterCategory) return false;
     if (filterVendor && (m.vendor || '') !== filterVendor) return false;
+    if (filterPayable && m.paymentResponsibility !== filterPayable) return false;
     if (searchTerm && !`${m.name} ${m.category} ${m.vendor} ${m.notes}`.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   }).slice().reverse();
@@ -875,6 +877,11 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
             <option value="">All Vendors</option>
             {uniqueVendors.map(v => <option key={v} value={v}>{v}</option>)}
           </select>
+          <select className="mt-filter-select" value={filterPayable} onChange={e => setFilterPayable(e.target.value)}>
+            <option value="">All Payables</option>
+            <option value="Client">Payable by Client</option>
+            <option value="Omji">Payable by Omji</option>
+          </select>
           <span style={{ fontSize:'.62rem', fontWeight:700, color:'var(--concrete)', textTransform:'uppercase', letterSpacing:'.05em', fontFamily:'var(--font-mono)', marginLeft:8 }}>Sort:</span>
           <select className="mt-filter-select" value={txSort} onChange={e => setTxSort(e.target.value)}>
             <option value="date-desc">Date: New → Old</option>
@@ -884,11 +891,12 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
             <option value="total-desc">Total: High → Low</option>
             <option value="total-asc">Total: Low → High</option>
           </select>
-          {(filterCategory || filterVendor) && (
+          {(filterCategory || filterVendor || filterPayable) && (
             <>
               {filterCategory && <span className="mt-active-filter">📂 {filterCategory} <button onClick={() => setFilterCategory('')}>✕</button></span>}
               {filterVendor && <span className="mt-active-filter">🏢 {filterVendor} <button onClick={() => setFilterVendor('')}>✕</button></span>}
-              <button className="mt-clear-filters" onClick={() => { setFilterCategory(''); setFilterVendor(''); }}>Clear All</button>
+              {filterPayable && <span className="mt-active-filter">💳 {filterPayable} <button onClick={() => setFilterPayable('')}>✕</button></span>}
+              <button className="mt-clear-filters" onClick={() => { setFilterCategory(''); setFilterVendor(''); setFilterPayable(''); }}>Clear All</button>
             </>
           )}
         </div>
