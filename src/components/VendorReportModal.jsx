@@ -15,11 +15,13 @@ export default function VendorReportModal({ projectId, contact, onClose }) {
     totalMaterialReceived,
     totalMaterialCost,
     totalAmountPaid,
-    totalDue,
+    dueByOmji,
+    dueByVendor,
     directPaidByClient,
     paidByOmji,
     vendorMaterials,
-    vendorPayments
+    vendorPayments,
+    materialSummary
   } = useMemo(() => {
     // 1. Calculate Material Received & Cost for this vendor
     // Materials associated with this contact:
@@ -63,17 +65,42 @@ export default function VendorReportModal({ projectId, contact, onClose }) {
       }
     });
 
-    const totalDue = Math.max(0, totalMaterialCost - totalAmountPaid);
+    const dueByOmji = Math.max(0, totalMaterialCost - totalAmountPaid);
+    const dueByVendor = Math.max(0, totalAmountPaid - totalMaterialCost);
+
+    // Group materials by item (name + unit)
+    const aggregatedMaterials = {};
+    vendorMaterials.forEach(m => {
+      if (m.category === 'Subcontractor Payment') return;
+      const key = `${m.name}|${m.unit || ''}`;
+      if (!aggregatedMaterials[key]) {
+        aggregatedMaterials[key] = {
+          name: m.name,
+          category: m.category,
+          unit: m.unit,
+          quantity: 0,
+          amount: 0
+        };
+      }
+      const qty = parseFloat(m.received || 0);
+      const rate = parseFloat(m.rate || 0);
+      aggregatedMaterials[key].quantity += qty;
+      aggregatedMaterials[key].amount += qty * rate;
+    });
+
+    const materialSummary = Object.values(aggregatedMaterials).sort((a, b) => b.amount - a.amount);
 
     return {
       totalMaterialReceived,
       totalMaterialCost,
       totalAmountPaid,
-      totalDue,
+      dueByOmji,
+      dueByVendor,
       directPaidByClient,
       paidByOmji,
       vendorMaterials,
-      vendorPayments
+      vendorPayments,
+      materialSummary
     };
   }, [materials, payments, contact]);
 
@@ -110,8 +137,13 @@ export default function VendorReportModal({ projectId, contact, onClose }) {
             </div>
 
             <div style={{ background: 'var(--paper)', padding: '20px', borderRadius: 'var(--radius)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)' }}>
-              <div style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Outstanding Due</div>
-              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: totalDue > 0 ? 'var(--rust)' : 'var(--concrete)', marginTop: 8, fontFamily: 'var(--font-display)' }}>{fmtAmt(totalDue)}</div>
+              <div style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Due by Omji Construction</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: dueByOmji > 0 ? 'var(--rust)' : 'var(--concrete)', marginTop: 8, fontFamily: 'var(--font-display)' }}>{fmtAmt(dueByOmji)}</div>
+            </div>
+
+            <div style={{ background: 'var(--paper)', padding: '20px', borderRadius: 'var(--radius)', border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-sm)' }}>
+              <div style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Due by Vendor</div>
+              <div style={{ fontSize: '1.6rem', fontWeight: 800, color: dueByVendor > 0 ? 'var(--amber)' : 'var(--concrete)', marginTop: 8, fontFamily: 'var(--font-display)' }}>{fmtAmt(dueByVendor)}</div>
             </div>
 
           </div>
@@ -130,6 +162,37 @@ export default function VendorReportModal({ projectId, contact, onClose }) {
                   <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', marginTop: 4, fontFamily: 'var(--font-display)' }}>{fmtAmt(directPaidByClient)}</div>
                 </div>
              </div>
+           </div>
+
+           {/* Aggregated Material Summary Table */}
+           <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ fontSize: '.8rem', textTransform: 'uppercase', color: 'var(--concrete)', marginBottom: '12px' }}>Total Item by Category</h3>
+              <div style={{ background: '#fff', borderRadius: 'var(--radius)', border: '1px solid var(--hairline)', overflow: 'hidden' }}>
+                {materialSummary.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: 'var(--concrete)', fontSize: '.8rem' }}>No items found</div>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--paper-2)', borderBottom: '1px solid var(--hairline)' }}>
+                        <th style={{ padding: '10px 14px', fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)' }}>Category</th>
+                        <th style={{ padding: '10px 14px', fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)' }}>Item</th>
+                        <th style={{ padding: '10px 14px', fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)', textAlign: 'right' }}>Quantity</th>
+                        <th style={{ padding: '10px 14px', fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)', textAlign: 'right' }}>Total Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {materialSummary.map((item, idx) => (
+                        <tr key={idx} style={{ borderBottom: '1px solid var(--hairline)' }}>
+                          <td style={{ padding: '10px 14px', fontSize: '.8rem', fontWeight: 600, color: 'var(--concrete)' }}>{item.category}</td>
+                          <td style={{ padding: '10px 14px', fontSize: '.8rem', fontWeight: 600, color: 'var(--ink)' }}>{item.name}</td>
+                          <td style={{ padding: '10px 14px', fontSize: '.8rem', fontWeight: 700, textAlign: 'right' }}>{Number.isInteger(item.quantity) ? item.quantity : item.quantity.toFixed(2)} {item.unit}</td>
+                          <td style={{ padding: '10px 14px', fontSize: '.8rem', fontWeight: 700, textAlign: 'right', color: 'var(--ink)' }}>{fmtAmt(item.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
            </div>
 
            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
