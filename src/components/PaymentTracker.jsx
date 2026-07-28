@@ -380,21 +380,30 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
                     <div style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{v.role} · {v.count} milestone{v.count !== 1 ? 's' : ''}</div>
                   </div>
                   <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.billed)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--amber)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.wePaid)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--blue)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.directPaid)}</span>
-                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--green)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.paid)}</span>
+                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.wePaid > 0 ? 'var(--amber)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.wePaid)}</span>
+                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.directPaid > 0 ? 'var(--blue)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.directPaid)}</span>
+                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.paid > 0 ? 'var(--green)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.paid)}</span>
                   <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.billed - v.paid > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.billed - v.paid)}</span>
                 </div>
               ))}
               {/* Totals row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, alignItems: 'center', padding: '8px 10px', borderTop: '2px solid var(--hairline)', marginTop: 4 }}>
-                <span style={{ fontWeight: 800, fontSize: '.75rem', color: 'var(--ink)' }}>Total</span>
-                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + v.billed, 0))}</span>
-                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--amber)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + (v.wePaid || 0), 0))}</span>
-                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--blue)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + (v.directPaid || 0), 0))}</span>
-                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--green)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + v.paid, 0))}</span>
-                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--rust)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + v.billed - v.paid, 0))}</span>
-              </div>
+              {(() => {
+                const tBilled = vendorSummaryEntries.reduce((s, v) => s + v.billed, 0);
+                const tWePaid = vendorSummaryEntries.reduce((s, v) => s + (v.wePaid || 0), 0);
+                const tDirectPaid = vendorSummaryEntries.reduce((s, v) => s + (v.directPaid || 0), 0);
+                const tPaid = vendorSummaryEntries.reduce((s, v) => s + v.paid, 0);
+                const tOut = tBilled - tPaid;
+                return (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, alignItems: 'center', padding: '8px 10px', borderTop: '2px solid var(--hairline)', marginTop: 4 }}>
+                    <span style={{ fontWeight: 800, fontSize: '.75rem', color: 'var(--ink)' }}>Total</span>
+                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tBilled)}</span>
+                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tWePaid > 0 ? 'var(--amber)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tWePaid)}</span>
+                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tDirectPaid > 0 ? 'var(--blue)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tDirectPaid)}</span>
+                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tPaid > 0 ? 'var(--green)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tPaid)}</span>
+                    <span style={{ fontWeight: 800, fontSize: '.78rem', color: tOut > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(tOut)}</span>
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
