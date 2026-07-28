@@ -1,4 +1,4 @@
-export function exportTableToPDF(title, headers, rows) {
+export function exportTableToPDF(title, headers, rows, summaryHtml = '') {
   const now = new Date().toLocaleDateString('en-IN', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit'
@@ -23,7 +23,7 @@ export function exportTableToPDF(title, headers, rows) {
       @page { margin: 0.6in; size: A4 landscape; }
     }
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1C1A17; margin: 0; padding: 40px; background: #fff; }
-    .report-header { border-bottom: 3px solid #C5A880; padding-bottom: 20px; margin-bottom: 24px; }
+    .report-header { border-bottom: 3px solid #C5A880; padding-bottom: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: flex-end; }
     .report-header h1 { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px 0; }
     .report-header .subtitle { font-size: 0.8rem; color: #7C7468; font-family: 'Courier New', monospace; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -33,8 +33,11 @@ export function exportTableToPDF(title, headers, rows) {
 </head>
 <body>
   <div class="report-header">
-    <h1>◆ ${title}</h1>
-    <div class="subtitle">GENERATED ON ${now}</div>
+    <div>
+      <h1>◆ ${title}</h1>
+      <div class="subtitle">GENERATED ON ${now}</div>
+    </div>
+    ${summaryHtml ? `<div>${summaryHtml}</div>` : ''}
   </div>
 
   <table>

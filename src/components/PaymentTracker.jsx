@@ -200,18 +200,39 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
   const handleExportPDF = () => {
     const headers = ['Milestone', 'Type', 'Status', 'Contact', 'Due Date', 'Paid Date', 'Phase', 'Billed', 'Paid', 'Pending'];
+    let tBilled = 0, tPaid = 0;
     const rows = filteredPayments.map(p => {
       let contactName = '';
       if (p.contactId) contactName = contacts.find(c => c.id === p.contactId)?.name || 'Unknown';
       const pAmt = p.amount || 0;
       const pPaid = p.paidAmount || 0;
+      tBilled += pAmt;
+      tPaid += pPaid;
       return [
         p.milestone || '', p.type || '', p.status || '', contactName,
         p.dueDate || '-', p.paidDate || '-', p.linkedPhase || '-',
         fmtAmt(pAmt), fmtAmt(pPaid), fmtAmt(pAmt - pPaid)
       ];
     });
-    exportTableToPDF('Payment Ledger', headers, rows);
+
+    const summaryHtml = `
+      <div style="display:flex; gap: 24px; text-align: right; padding-bottom: 4px;">
+        <div>
+          <div style="font-size: 0.65rem; color: #7C7468; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 2px;">Total Billed</div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #1C1A17; font-family: monospace;">${fmtAmt(tBilled)}</div>
+        </div>
+        <div>
+          <div style="font-size: 0.65rem; color: #7C7468; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 2px;">Total Paid</div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #3b82f6; font-family: monospace;">${fmtAmt(tPaid)}</div>
+        </div>
+        <div>
+          <div style="font-size: 0.65rem; color: #7C7468; text-transform: uppercase; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 2px;">Total Due</div>
+          <div style="font-size: 1.05rem; font-weight: 800; color: #ef4444; font-family: monospace;">${fmtAmt(tBilled - tPaid)}</div>
+        </div>
+      </div>
+    `;
+
+    exportTableToPDF('Payment Ledger', headers, rows, summaryHtml);
   };
 
   const ringR = 24;
