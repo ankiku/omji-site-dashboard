@@ -152,6 +152,10 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
     const vendorDisbursements = modeFilteredPayments.filter(p => p.type.includes('Disbursement')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
     const directPayments = modeFilteredPayments.filter(p => p.type.includes('Direct Payment')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
 
+    const vendorModeVendorPaid = modeFilteredPayments.filter(p => p.type === 'Vendor').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+    const vendorModeOmjiCash = modeFilteredPayments.filter(p => p.type === 'Omji Cash').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+    const vendorModeOmjiRtgs = modeFilteredPayments.filter(p => p.type === 'Omji RTGS').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+
     // Vendor-wise summary
     const vendorWise = {};
     modeFilteredPayments.forEach(p => {
@@ -175,7 +179,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       }
     });
 
-    return { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorWise };
+    return { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorModeVendorPaid, vendorModeOmjiCash, vendorModeOmjiRtgs, vendorWise };
   }, [modeFilteredPayments]);
 
   const filteredPayments = useMemo(() => {
@@ -365,44 +369,82 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
       {/* ── KPIs with ring ── */}
       <div className="pay-kpi-row">
-        <div className="pay-kpi-card">
-          <div>
-            <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Contract Value</span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalAmount)}</div>
-            <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>{payments.length} scheduled bills</span>
-          </div>
-        </div>
+        {mode !== 'vendor' ? (
+          <>
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Contract Value</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalAmount)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>{modeFilteredPayments.length} scheduled bills</span>
+              </div>
+            </div>
 
-        <div className="pay-kpi-card">
-          <div>
-            <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Total Collected</span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--green)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalPaid)}</div>
-            <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Invoiced &amp; cleared</span>
-          </div>
-          <svg width="56" height="56" style={{ flexShrink: 0 }}>
-            <circle cx="28" cy="28" r={ringR} fill="none" stroke="var(--hairline)" strokeWidth="4" />
-            <circle cx="28" cy="28" r={ringR} fill="none" stroke="var(--green)" strokeWidth="4"
-              strokeDasharray={ringC} strokeDashoffset={ringOffset} strokeLinecap="round" transform="rotate(-90 28 28)"
-              style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
-            <text x="28" y="31" textAnchor="middle" fontSize="9" fontWeight="800" fill="var(--green)" fontFamily="var(--font-mono)">{collectionPct}%</text>
-          </svg>
-        </div>
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Total Collected</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--green)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalPaid)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Invoiced &amp; cleared</span>
+              </div>
+              <svg width="56" height="56" style={{ flexShrink: 0 }}>
+                <circle cx="28" cy="28" r={ringR} fill="none" stroke="var(--hairline)" strokeWidth="4" />
+                <circle cx="28" cy="28" r={ringR} fill="none" stroke="var(--green)" strokeWidth="4"
+                  strokeDasharray={ringC} strokeDashoffset={ringOffset} strokeLinecap="round" transform="rotate(-90 28 28)"
+                  style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
+                <text x="28" y="31" textAnchor="middle" fontSize="9" fontWeight="800" fill="var(--green)" fontFamily="var(--font-mono)">{collectionPct}%</text>
+              </svg>
+            </div>
 
-        <div className="pay-kpi-card">
-          <div>
-            <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Outstanding</span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: totalPending > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalPending)}</div>
-            <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Unpaid/pending balance</span>
-          </div>
-        </div>
-
-        <div className="pay-kpi-card">
-          <div>
-            <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Overdue Invoices</span>
-            <div style={{ fontSize: '1.45rem', fontWeight: 800, color: pendingOverdue > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(pendingOverdue)}</div>
-            <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Requires attention</span>
-          </div>
-        </div>
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Outstanding</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: totalPending > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalPending)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Unpaid/pending balance</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Overdue Invoices</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: pendingOverdue > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(pendingOverdue)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Requires attention</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Paid to Vendor</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeVendorPaid)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Vendor bills cleared</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji Cash to Sub</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeOmjiCash)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Cash disbursed</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji RTGS to Sub</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeOmjiRtgs)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Bank transfers</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Overdue Invoices</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: pendingOverdue > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(pendingOverdue)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Requires attention</span>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Vendor-wise Summary ── */}
