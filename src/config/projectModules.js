@@ -43,8 +43,8 @@ export const MODULE_CATEGORIES = [
     description: 'Costs & payments',
     modules: [
       { id: 'expenses', label: 'Expenses', icon: '💰', description: 'Track spending vs budget' },
-      { id: 'payments', label: 'Client Payments', icon: '💳', description: 'Invoices & Client Draws' },
-      { id: 'vendor-payments', label: 'Vendor Pay', icon: '🧾', description: 'Track vendor & sub payments' },
+      { id: 'payments', label: 'Client Payment', icon: '💳', description: 'Invoices & Client Draws' },
+      { id: 'vendor-payments', label: 'Omji Construction Payment', icon: '🧾', description: 'Track vendor & sub payments' },
     ],
   },
   {

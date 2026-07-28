@@ -135,7 +135,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       }
       return p;
     }).filter(p => {
-      if (mode === 'vendor') return ['Vendor Disbursement', 'Contractor Disbursement', 'Client Direct Payment (to Vendor)'].includes(p.type);
+      if (mode === 'vendor') return ['Vendor Disbursement', 'Contractor Disbursement'].includes(p.type);
       if (mode === 'client') return ['Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct Payment (to Vendor)'].includes(p.type);
       return true;
     });
@@ -310,10 +310,10 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       <div className="module-header" style={{ marginBottom: 'var(--sp-md)' }}>
         <div>
           <h2 className="section-title">
-            {mode === 'vendor' ? '🧾 Vendor & Subcontractor Billing' : mode === 'client' ? '💳 Client Billing & Collections' : '💰 Payment & Milestone Billing'}
+            {mode === 'vendor' ? '🧾 Omji Construction Payment' : mode === 'client' ? '💳 Client Payment' : '💰 Payment & Milestone Billing'}
           </h2>
           <p className="mono" style={{ fontSize: '0.72rem', color: 'var(--concrete)', marginTop: 2 }}>
-            {mode === 'vendor' ? 'Track contractor disbursements, vendor payments, and client direct pays.' : mode === 'client' ? 'Track client draws, advances, and invoice collections.' : 'Track client draws, contractor disbursements, advances, and invoice collections.'}
+            {mode === 'vendor' ? 'Track contractor and vendor disbursements made by Omji Construction.' : mode === 'client' ? 'Track client draws, advances, and direct payments to vendors.' : 'Track client draws, contractor disbursements, advances, and invoice collections.'}
           </p>
         </div>
         {canEdit && <button className="btn btn-primary btn-sm" onClick={() => { resetForm(); setShowForm(true); }}>+ Create Milestone</button>}
@@ -482,7 +482,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
             {project?.slug && (
               <button onClick={() => { const url = `${window.location.origin}/p/${project.slug}/ledger?view=payments`; navigator.clipboard.writeText(url); toast.success('Shareable link copied!'); }} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>🔗 Share</button>
             )}
-            {(mode === 'vendor' ? ['All', 'Contractor', 'Vendor Disbursement', 'Client Direct'] : mode === 'client' ? ['All', 'Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct'] : ['All', 'Client Payment', 'Contractor', 'Vendor Disbursement', 'Client Direct', 'Advance']).map(t => (
+            {(mode === 'vendor' ? ['All', 'Contractor', 'Vendor Disbursement'] : mode === 'client' ? ['All', 'Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct'] : ['All', 'Client Payment', 'Contractor', 'Vendor Disbursement', 'Client Direct', 'Advance']).map(t => (
               <button key={t} onClick={() => setFilterType(t)} className="btn btn-outline btn-sm" style={{ fontSize: '0.65rem', padding: '3px 8px', border: filterType === t ? '1.5px solid var(--ink)' : '1px solid var(--hairline)', background: filterType === t ? 'var(--ink)' : 'transparent', color: filterType === t ? '#fff' : 'var(--concrete)' }}>
                 {t === 'All' ? 'All' : t === 'Client Payment' ? 'Client' : t === 'Contractor' ? 'Contractor' : t === 'Vendor Disbursement' ? 'Vendor' : t === 'Client Direct' ? 'Direct Pay' : t}
               </button>
@@ -591,7 +591,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
                 <div className="form-group">
                   <label>Billing Type</label>
                   <select className="form-select" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                    {PAY_TYPES.filter(t => mode === 'all' || (mode === 'vendor' ? ['Vendor Disbursement', 'Contractor Disbursement', 'Client Direct Payment (to Vendor)'].includes(t) : ['Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct Payment (to Vendor)'].includes(t))).map(t => <option key={t} value={t}>{t}</option>)}
+                    {PAY_TYPES.filter(t => mode === 'all' || (mode === 'vendor' ? ['Vendor Disbursement', 'Contractor Disbursement'].includes(t) : ['Client Payment', 'Advance', 'Retention', 'Final Bill', 'Client Direct Payment (to Vendor)'].includes(t))).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
