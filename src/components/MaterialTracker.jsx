@@ -150,7 +150,8 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                await updatePayment(projectId, linkedPaymentId, paymentData);
             }
           } else {
-            linkedPaymentId = await addPayment(projectId, paymentData);
+            const newPay = await addPayment(projectId, paymentData);
+            linkedPaymentId = typeof newPay === 'object' ? newPay.id : newPay;
           }
         } catch (err) {
           console.error('Failed to create/update linked payment', err);
@@ -218,7 +219,8 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
              await updatePayment(projectId, linkedPaymentId, paymentData);
           }
         } else {
-          linkedPaymentId = await addPayment(projectId, paymentData);
+          const newPay = await addPayment(projectId, paymentData);
+          linkedPaymentId = newPay.id;
         }
       } catch (err) {
         console.error('Failed to create/update linked payment', err);
@@ -920,7 +922,8 @@ export default function MaterialTracker({ projectId, canEdit, contacts = [], pro
                       </span>
                       <strong style={{ fontSize: '1rem', color: 'var(--ink)' }}>{m.name}</strong>
                       {m.linkedPaymentId && (() => {
-                        const lp = payments.find(p => p.id === m.linkedPaymentId);
+                        const pid = typeof m.linkedPaymentId === 'object' ? m.linkedPaymentId.id : m.linkedPaymentId;
+                        const lp = payments.find(p => p.id === pid);
                         const stat = lp?.status || 'Pending';
                         const col = stat === 'Paid' ? 'var(--green)' : stat === 'Overdue' ? 'var(--rust)' : 'var(--amber)';
                         const bg = stat === 'Paid' ? 'var(--green-light)' : stat === 'Overdue' ? 'var(--rust-light)' : 'var(--amber-light)';
