@@ -142,15 +142,15 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
   }, [payments, mode]);
 
   const { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorWise } = useMemo(() => {
-    const totalAmount = modeFilteredPayments.reduce((s, p) => s + (p.amount || 0), 0);
-    const totalPaid = modeFilteredPayments.reduce((s, p) => s + (p.paidAmount || 0), 0);
+    const totalAmount = modeFilteredPayments.reduce((s, p) => s + parseFloat(p.amount || 0), 0);
+    const totalPaid = modeFilteredPayments.reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
     const totalPending = totalAmount - totalPaid;
     const collectionPct = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
-    const pendingOverdue = modeFilteredPayments.filter(p => p.status === 'Overdue').reduce((s, p) => s + ((p.amount || 0) - (p.paidAmount || 0)), 0);
+    const pendingOverdue = modeFilteredPayments.filter(p => p.status === 'Overdue').reduce((s, p) => s + (parseFloat(p.amount || 0) - parseFloat(p.paidAmount || 0)), 0);
 
-    const clientCollections = modeFilteredPayments.filter(p => p.type.includes('Client Payment') || p.type.includes('Advance')).reduce((s, p) => s + (p.paidAmount || 0), 0);
-    const vendorDisbursements = modeFilteredPayments.filter(p => p.type.includes('Disbursement')).reduce((s, p) => s + (p.paidAmount || 0), 0);
-    const directPayments = modeFilteredPayments.filter(p => p.type.includes('Direct Payment')).reduce((s, p) => s + (p.paidAmount || 0), 0);
+    const clientCollections = modeFilteredPayments.filter(p => p.type.includes('Client Payment') || p.type.includes('Advance')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+    const vendorDisbursements = modeFilteredPayments.filter(p => p.type.includes('Disbursement')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+    const directPayments = modeFilteredPayments.filter(p => p.type.includes('Direct Payment')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
 
     // Vendor-wise summary
     const vendorWise = {};
@@ -161,8 +161,8 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       if (!targetId) return;
       if (!vendorWise[targetId]) vendorWise[targetId] = { billed: 0, paid: 0, count: 0, directPaid: 0, wePaid: 0 };
       
-      const amt = (p.amount || 0);
-      const pd = (p.paidAmount || 0);
+      const amt = parseFloat(p.amount || 0);
+      const pd = parseFloat(p.paidAmount || 0);
       
       vendorWise[targetId].billed += amt;
       vendorWise[targetId].paid += pd;
@@ -204,8 +204,8 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
     const rows = filteredPayments.map(p => {
       let contactName = '';
       if (p.contactId) contactName = contacts.find(c => c.id === p.contactId)?.name || 'Unknown';
-      const pAmt = p.amount || 0;
-      const pPaid = p.paidAmount || 0;
+      const pAmt = parseFloat(p.amount || 0);
+      const pPaid = parseFloat(p.paidAmount || 0);
       tBilled += pAmt;
       tPaid += pPaid;
       
