@@ -137,12 +137,24 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
     // Vendor-wise summary
     const vendorWise = {};
     payments.forEach(p => {
-      const contactId = p.contactId;
-      if (!contactId) return;
-      if (!vendorWise[contactId]) vendorWise[contactId] = { billed: 0, paid: 0, count: 0 };
-      vendorWise[contactId].billed += (p.amount || 0);
-      vendorWise[contactId].paid += (p.paidAmount || 0);
-      vendorWise[contactId].count += 1;
+      const isDirect = p.type === 'Client Direct Payment (to Vendor)';
+      const targetId = (isDirect && p.vendorContactId) ? p.vendorContactId : p.contactId;
+
+      if (!targetId) return;
+      if (!vendorWise[targetId]) vendorWise[targetId] = { billed: 0, paid: 0, count: 0, directPaid: 0, wePaid: 0 };
+      
+      const amt = (p.amount || 0);
+      const pd = (p.paidAmount || 0);
+      
+      vendorWise[targetId].billed += amt;
+      vendorWise[targetId].paid += pd;
+      vendorWise[targetId].count += 1;
+      
+      if (isDirect) {
+        vendorWise[targetId].directPaid += pd;
+      } else if (p.type.includes('Disbursement') || p.type.includes('Vendor')) {
+        vendorWise[targetId].wePaid += pd;
+      }
     });
 
     return { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorWise };
@@ -335,24 +347,28 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
           {showVendorSummary && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {/* Header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 12, fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', padding: '4px 10px', borderBottom: '1px solid var(--hairline)', marginBottom: 4 }}>
-                <span>Contact</span><span style={{ textAlign: 'right' }}>Billed</span><span style={{ textAlign: 'right' }}>Paid</span><span style={{ textAlign: 'right' }}>Outstanding</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, fontSize: '.6rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', fontFamily: 'var(--font-mono)', padding: '4px 10px', borderBottom: '1px solid var(--hairline)', marginBottom: 4 }}>
+                <span>Contact</span><span style={{ textAlign: 'right' }}>Billed</span><span style={{ textAlign: 'right' }}>We Paid</span><span style={{ textAlign: 'right' }}>Client Paid</span><span style={{ textAlign: 'right' }}>Total Paid</span><span style={{ textAlign: 'right' }}>Outstanding</span>
               </div>
               {vendorSummaryEntries.map((v, i) => (
-                <div key={i} className="pay-vendor-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 12, alignItems: 'center' }}>
+                <div key={i} className="pay-vendor-row" style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, alignItems: 'center' }}>
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '.82rem', color: 'var(--ink)' }}>{v.name}</div>
                     <div style={{ fontSize: '.62rem', color: 'var(--concrete)', fontFamily: 'var(--font-mono)' }}>{v.role} · {v.count} milestone{v.count !== 1 ? 's' : ''}</div>
                   </div>
                   <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.billed)}</span>
+                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--amber)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.wePaid)}</span>
+                  <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--blue)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.directPaid)}</span>
                   <span style={{ fontWeight: 700, fontSize: '.78rem', color: 'var(--green)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.paid)}</span>
                   <span style={{ fontWeight: 700, fontSize: '.78rem', color: v.billed - v.paid > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(v.billed - v.paid)}</span>
                 </div>
               ))}
               {/* Totals row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 12, alignItems: 'center', padding: '8px 10px', borderTop: '2px solid var(--hairline)', marginTop: 4 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto auto auto', gap: 12, alignItems: 'center', padding: '8px 10px', borderTop: '2px solid var(--hairline)', marginTop: 4 }}>
                 <span style={{ fontWeight: 800, fontSize: '.75rem', color: 'var(--ink)' }}>Total</span>
                 <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--ink)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + v.billed, 0))}</span>
+                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--amber)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + (v.wePaid || 0), 0))}</span>
+                <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--blue)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + (v.directPaid || 0), 0))}</span>
                 <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--green)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + v.paid, 0))}</span>
                 <span style={{ fontWeight: 800, fontSize: '.78rem', color: 'var(--rust)', fontFamily: 'var(--font-mono)', textAlign: 'right' }}>{fmtAmt(vendorSummaryEntries.reduce((s, v) => s + v.billed - v.paid, 0))}</span>
               </div>
