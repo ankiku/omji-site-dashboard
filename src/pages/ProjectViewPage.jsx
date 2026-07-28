@@ -211,7 +211,8 @@ export default function ProjectViewPage({ projectId: propProjectId, activeTab = 
         {activeTab === 'sitelog' && <DailySiteLog projectId={projectId} canEdit={canEdit} />}
         {activeTab === 'materials' && <MaterialTracker projectId={projectId} canEdit={canEdit} contacts={contacts} project={project} />}
         {activeTab === 'labour' && <LabourTracker projectId={projectId} canEdit={canEdit} />}
-        {activeTab === 'payments' && <PaymentTracker projectId={projectId} canEdit={canEdit} contacts={contacts} materials={materials} project={project} />}
+        {activeTab === 'payments' && <PaymentTracker projectId={projectId} canEdit={canEdit} contacts={contacts} materials={materials} project={project} mode="client" />}
+        {activeTab === 'vendor-payments' && <PaymentTracker projectId={projectId} canEdit={canEdit} contacts={contacts} materials={materials} project={project} mode="vendor" />}
         {activeTab === 'drawings' && <DrawingRegister projectId={projectId} canEdit={canEdit} project={project} />}
         {activeTab === 'checklists' && <QualityChecklist projectId={projectId} canEdit={canEdit} />}
         {activeTab === 'issues' && <IssueTracker projectId={projectId} canEdit={canEdit} />}

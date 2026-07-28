@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 const PAY_TYPES = ['Client Payment', 'Contractor Disbursement', 'Vendor Disbursement', 'Client Direct Payment (to Vendor)', 'Advance', 'Retention', 'Final Bill'];
 const PAY_STATUS = ['Pending', 'Partially Paid', 'Paid', 'Overdue'];
 
-export default function PaymentTracker({ projectId, canEdit, contacts = [], project }) {
+export default function PaymentTracker({ projectId, canEdit, contacts = [], project, mode = 'all' }) {
   const [payments, setPayments] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -16,7 +16,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
   const [form, setForm] = useState({
     milestone: '',
-    type: 'Client Payment',
+    type: mode === 'vendor' ? 'Vendor Disbursement' : 'Client Payment',
     amount: '',
     paidAmount: '',
     status: 'Pending',
@@ -39,7 +39,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
   const resetForm = () => {
     setForm({
       milestone: '',
-      type: 'Client Payment',
+      type: mode === 'vendor' ? 'Vendor Disbursement' : 'Client Payment',
       amount: '',
       paidAmount: '',
       status: 'Pending',
@@ -123,20 +123,28 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
   const fmtAmt = (n) => '₹' + Number(n || 0).toLocaleString('en-IN');
 
+  const modeFilteredPayments = useMemo(() => {
+    return payments.filter(p => {
+      if (mode === 'vendor') return ['Vendor Disbursement', 'Contractor Disbursement', 'Client Direct Payment (to Vendor)'].includes(p.type);
+      if (mode === 'client') return ['Client Payment', 'Advance', 'Retention', 'Final Bill'].includes(p.type);
+      return true;
+    });
+  }, [payments, mode]);
+
   const { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorWise } = useMemo(() => {
-    const totalAmount = payments.reduce((s, p) => s + (p.amount || 0), 0);
-    const totalPaid = payments.reduce((s, p) => s + (p.paidAmount || 0), 0);
+    const totalAmount = modeFilteredPayments.reduce((s, p) => s + (p.amount || 0), 0);
+    const totalPaid = modeFilteredPayments.reduce((s, p) => s + (p.paidAmount || 0), 0);
     const totalPending = totalAmount - totalPaid;
     const collectionPct = totalAmount > 0 ? Math.round((totalPaid / totalAmount) * 100) : 0;
-    const pendingOverdue = payments.filter(p => p.status === 'Overdue').reduce((s, p) => s + ((p.amount || 0) - (p.paidAmount || 0)), 0);
+    const pendingOverdue = modeFilteredPayments.filter(p => p.status === 'Overdue').reduce((s, p) => s + ((p.amount || 0) - (p.paidAmount || 0)), 0);
 
-    const clientCollections = payments.filter(p => p.type.includes('Client Payment') || p.type.includes('Advance')).reduce((s, p) => s + (p.paidAmount || 0), 0);
-    const vendorDisbursements = payments.filter(p => p.type.includes('Disbursement')).reduce((s, p) => s + (p.paidAmount || 0), 0);
-    const directPayments = payments.filter(p => p.type.includes('Direct Payment')).reduce((s, p) => s + (p.paidAmount || 0), 0);
+    const clientCollections = modeFilteredPayments.filter(p => p.type.includes('Client Payment') || p.type.includes('Advance')).reduce((s, p) => s + (p.paidAmount || 0), 0);
+    const vendorDisbursements = modeFilteredPayments.filter(p => p.type.includes('Disbursement')).reduce((s, p) => s + (p.paidAmount || 0), 0);
+    const directPayments = modeFilteredPayments.filter(p => p.type.includes('Direct Payment')).reduce((s, p) => s + (p.paidAmount || 0), 0);
 
     // Vendor-wise summary
     const vendorWise = {};
-    payments.forEach(p => {
+    modeFilteredPayments.forEach(p => {
       const isDirect = p.type === 'Client Direct Payment (to Vendor)';
       const targetId = (isDirect && p.vendorContactId) ? p.vendorContactId : p.contactId;
 
@@ -158,10 +166,10 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
     });
 
     return { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorWise };
-  }, [payments]);
+  }, [modeFilteredPayments]);
 
   const filteredPayments = useMemo(() => {
-    let list = [...payments];
+    let list = [...modeFilteredPayments];
     if (filterType !== 'All') {
       if (filterType === 'Client Direct') {
         list = list.filter(p => p.type.includes('Direct Payment'));
@@ -253,9 +261,11 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       {/* ── Header ── */}
       <div className="module-header" style={{ marginBottom: 'var(--sp-md)' }}>
         <div>
-          <h2 className="section-title">💰 Payment &amp; Milestone Billing</h2>
+          <h2 className="section-title">
+            {mode === 'vendor' ? '🧾 Vendor & Subcontractor Billing' : mode === 'client' ? '💳 Client Billing & Collections' : '💰 Payment & Milestone Billing'}
+          </h2>
           <p className="mono" style={{ fontSize: '0.72rem', color: 'var(--concrete)', marginTop: 2 }}>
-            Track client draws, contractor disbursements, advances, and invoice collections.
+            {mode === 'vendor' ? 'Track contractor disbursements, vendor payments, and client direct pays.' : mode === 'client' ? 'Track client draws, advances, and invoice collections.' : 'Track client draws, contractor disbursements, advances, and invoice collections.'}
           </p>
         </div>
         {canEdit && <button className="btn btn-primary btn-sm" onClick={() => { resetForm(); setShowForm(true); }}>+ Create Milestone</button>}
@@ -338,7 +348,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       </div>
 
       {/* ── Vendor-wise Summary ── */}
-      {vendorSummaryEntries.length > 0 && (
+      {mode !== 'client' && vendorSummaryEntries.length > 0 && (
         <div style={{ background: 'var(--paper)', border: '1px solid var(--hairline)', borderRadius: 'var(--radius)', padding: '14px 18px', marginBottom: 'var(--sp-lg)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showVendorSummary ? 12 : 0, cursor: 'pointer' }} onClick={() => setShowVendorSummary(v => !v)}>
             <div style={{ fontSize: '.7rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', letterSpacing: '.06em', fontFamily: 'var(--font-mono)' }}>📊 Vendor / Contact Wise Payment Summary ({vendorSummaryEntries.length})</div>
@@ -388,9 +398,9 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
             {project?.slug && (
               <button onClick={() => { const url = `${window.location.origin}/p/${project.slug}/ledger?view=payments`; navigator.clipboard.writeText(url); toast.success('Shareable link copied!'); }} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>🔗 Share</button>
             )}
-            {['All', 'Client Payment', 'Contractor', 'Vendor Disbursement', 'Client Direct', 'Advance'].map(t => (
+            {(mode === 'vendor' ? ['All', 'Contractor', 'Vendor Disbursement', 'Client Direct'] : mode === 'client' ? ['All', 'Client Payment', 'Advance', 'Retention', 'Final Bill'] : ['All', 'Client Payment', 'Contractor', 'Vendor Disbursement', 'Client Direct', 'Advance']).map(t => (
               <button key={t} onClick={() => setFilterType(t)} className="btn btn-outline btn-sm" style={{ fontSize: '0.65rem', padding: '3px 8px', border: filterType === t ? '1.5px solid var(--ink)' : '1px solid var(--hairline)', background: filterType === t ? 'var(--ink)' : 'transparent', color: filterType === t ? '#fff' : 'var(--concrete)' }}>
-                {t === 'All' ? 'All' : t === 'Client Payment' ? 'Client' : t === 'Contractor' ? 'Contractor' : t === 'Vendor Disbursement' ? 'Vendor' : t === 'Client Direct' ? 'Direct Pay' : 'Advance'}
+                {t === 'All' ? 'All' : t === 'Client Payment' ? 'Client' : t === 'Contractor' ? 'Contractor' : t === 'Vendor Disbursement' ? 'Vendor' : t === 'Client Direct' ? 'Direct Pay' : t}
               </button>
             ))}
           </div>
@@ -497,7 +507,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
                 <div className="form-group">
                   <label>Billing Type</label>
                   <select className="form-select" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                    {PAY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                    {PAY_TYPES.filter(t => mode === 'all' || (mode === 'vendor' ? ['Vendor Disbursement', 'Contractor Disbursement', 'Client Direct Payment (to Vendor)'].includes(t) : ['Client Payment', 'Advance', 'Retention', 'Final Bill'].includes(t))).map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
