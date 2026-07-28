@@ -11,6 +11,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState(null);
   const [filterType, setFilterType] = useState('All');
+  const [filterVendor, setFilterVendor] = useState('All');
   const [showVendorSummary, setShowVendorSummary] = useState(false);
   const toast = useToast();
 
@@ -188,8 +189,14 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
         list = list.filter(p => p.type === filterType);
       }
     }
+    if (filterVendor !== 'All') {
+      list = list.filter(p => {
+        const targetId = (p.type === 'Client Direct Payment (to Vendor)' && p.vendorContactId) ? p.vendorContactId : p.contactId;
+        return targetId === filterVendor;
+      });
+    }
     return list.sort((a, b) => Number(b.order) - Number(a.order));
-  }, [payments, filterType]);
+  }, [modeFilteredPayments, filterType, filterVendor]);
 
   const handleExportPDF = () => {
     const headers = ['Milestone', 'Type', 'Status', 'Contact', 'Due Date', 'Paid Date', 'Phase', 'Billed', 'Paid', 'Pending'];
@@ -213,7 +220,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
   const vendorSummaryEntries = Object.entries(vendorWise).map(([cid, data]) => {
     const contact = contacts.find(c => c.id === cid);
-    return { name: contact?.name || 'Unknown', role: contact?.role || '', ...data };
+    return { id: cid, name: contact?.name || 'Unknown', role: contact?.role || '', ...data };
   }).sort((a, b) => b.billed - a.billed);
 
   const isDirectPayment = form.type === 'Client Direct Payment (to Vendor)';
@@ -427,7 +434,19 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
           <h4 style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--concrete)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'var(--font-mono)' }}>
             📋 Payment Ledger ({filteredPayments.length})
           </h4>
-          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {mode !== 'client' && vendorSummaryEntries.length > 0 && (
+              <select 
+                value={filterVendor} 
+                onChange={e => setFilterVendor(e.target.value)}
+                style={{ padding: '3px 8px', borderRadius: 6, fontSize: '.65rem', border: '1px solid var(--hairline)', background: 'var(--paper)', color: 'var(--ink)' }}
+              >
+                <option value="All">All Vendors</option>
+                {vendorSummaryEntries.map(v => (
+                  <option key={v.id} value={v.id}>{v.name}</option>
+                ))}
+              </select>
+            )}
             <button onClick={handleExportPDF} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>📄 PDF</button>
             {project?.slug && (
               <button onClick={() => { const url = `${window.location.origin}/p/${project.slug}/ledger?view=payments`; navigator.clipboard.writeText(url); toast.success('Shareable link copied!'); }} style={{ padding: '4px 10px', borderRadius: 6, fontSize: '.65rem', fontWeight: 700, cursor: 'pointer', border: '1px solid var(--gold)', background: 'var(--gold-light)', color: 'var(--gold-dark)', textTransform: 'uppercase', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 4 }}>🔗 Share</button>
