@@ -152,9 +152,10 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
     const vendorDisbursements = modeFilteredPayments.filter(p => p.type.includes('Disbursement')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
     const directPayments = modeFilteredPayments.filter(p => p.type.includes('Direct Payment')).reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
 
-    const vendorModeVendorPaid = modeFilteredPayments.filter(p => p.type === 'Vendor').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+    const vendorModeVendorPaid = modeFilteredPayments.filter(p => p.type === 'Vendor' || p.type === 'Client Direct Payment (to Vendor)').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
     const vendorModeOmjiCash = modeFilteredPayments.filter(p => p.type === 'Omji Cash').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
     const vendorModeOmjiRtgs = modeFilteredPayments.filter(p => p.type === 'Omji RTGS').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
+    const clientModeOmjiCashRtgs = modeFilteredPayments.filter(p => p.type === 'Omji Cash/RTGS').reduce((s, p) => s + parseFloat(p.paidAmount || 0), 0);
 
     // Vendor-wise summary
     const vendorWise = {};
@@ -179,7 +180,7 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
       }
     });
 
-    return { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorModeVendorPaid, vendorModeOmjiCash, vendorModeOmjiRtgs, vendorWise };
+    return { totalAmount, totalPaid, totalPending, collectionPct, pendingOverdue, clientCollections, vendorDisbursements, directPayments, vendorModeVendorPaid, vendorModeOmjiCash, vendorModeOmjiRtgs, clientModeOmjiCashRtgs, vendorWise };
   }, [modeFilteredPayments]);
 
   const filteredPayments = useMemo(() => {
@@ -369,7 +370,67 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
 
       {/* ── KPIs with ring ── */}
       <div className="pay-kpi-row">
-        {mode !== 'vendor' ? (
+        {mode === 'client' ? (
+          <>
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Paid to Vendor</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeVendorPaid)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Vendor bills cleared</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji Cash / RTGS</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(clientModeOmjiCashRtgs)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Cash & transfers</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Overdue Invoices</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: pendingOverdue > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(pendingOverdue)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Requires attention</span>
+              </div>
+            </div>
+          </>
+        ) : mode === 'vendor' ? (
+          <>
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Paid to Vendor</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeVendorPaid)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Vendor bills cleared</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji Cash to Sub</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeOmjiCash)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Cash disbursed</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji RTGS to Sub</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeOmjiRtgs)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Bank transfers</span>
+              </div>
+            </div>
+            
+            <div className="pay-kpi-card">
+              <div>
+                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Overdue Invoices</span>
+                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: pendingOverdue > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(pendingOverdue)}</div>
+                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Requires attention</span>
+              </div>
+            </div>
+          </>
+        ) : (
           <>
             <div className="pay-kpi-card">
               <div>
@@ -399,40 +460,6 @@ export default function PaymentTracker({ projectId, canEdit, contacts = [], proj
                 <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Outstanding</span>
                 <div style={{ fontSize: '1.45rem', fontWeight: 800, color: totalPending > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(totalPending)}</div>
                 <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Unpaid/pending balance</span>
-              </div>
-            </div>
-            
-            <div className="pay-kpi-card">
-              <div>
-                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Overdue Invoices</span>
-                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: pendingOverdue > 0 ? 'var(--rust)' : 'var(--concrete)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(pendingOverdue)}</div>
-                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Requires attention</span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="pay-kpi-card">
-              <div>
-                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Paid to Vendor</span>
-                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--blue, #3D7CB8)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeVendorPaid)}</div>
-                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Vendor bills cleared</span>
-              </div>
-            </div>
-            
-            <div className="pay-kpi-card">
-              <div>
-                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji Cash to Sub</span>
-                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--ink)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeOmjiCash)}</div>
-                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Cash disbursed</span>
-              </div>
-            </div>
-            
-            <div className="pay-kpi-card">
-              <div>
-                <span className="mono" style={{ fontSize: '0.62rem', color: 'var(--concrete)', textTransform: 'uppercase' }}>Omji RTGS to Sub</span>
-                <div style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--amber)', fontFamily: 'var(--font-display)', marginTop: 4 }}>{fmtAmt(vendorModeOmjiRtgs)}</div>
-                <span className="mono" style={{ fontSize: '0.6rem', color: 'var(--concrete)' }}>Bank transfers</span>
               </div>
             </div>
             
