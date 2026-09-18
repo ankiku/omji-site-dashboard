@@ -520,6 +520,21 @@ app.post('/api/projects/:projectId/photos', authenticateToken, async (req, res) 
   }
 });
 
+app.delete('/api/projects/:projectId/photos/:photoId', authenticateToken, async (req, res) => {
+  const { projectId, photoId } = req.params;
+  try {
+    const photos = await getPhotos(projectId);
+    const filtered = photos.filter(p => p.id !== photoId);
+    if (filtered.length === photos.length) {
+      return res.status(404).json({ message: 'Photo not found' });
+    }
+    await savePhotos(projectId, filtered);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 // ─── GENERIC SUB-MODULE CRUD ROUTES ───
 
