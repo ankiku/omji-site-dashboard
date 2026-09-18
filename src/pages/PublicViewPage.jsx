@@ -10,8 +10,10 @@ import PhotoLogTab from '../components/PhotoLogTab';
 import CuringLog from '../components/CuringLog';
 import VisualBuildingHub from '../components/VisualBuildingHub';
 import DrawingRegister from '../components/DrawingRegister';
+import PublicPaymentView from '../components/PublicPaymentView';
 import {
-  getProjectBySlug, subscribeToTasks, subscribeToPhotos, subscribeToDrawings
+  getProjectBySlug, subscribeToTasks, subscribeToPhotos, subscribeToDrawings,
+  getPublicPayments, getPublicContacts
 } from '../services/localStorageService';
 import {
   formatDate, computeProjectStats, getPhases,
@@ -24,6 +26,8 @@ export default function PublicViewPage() {
   const [tasks, setTasks] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [drawings, setDrawings] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -45,6 +49,9 @@ export default function PublicViewPage() {
       unsub1 = subscribeToTasks(p.id, setTasks);
       unsub2 = subscribeToPhotos(p.id, setPhotos);
       unsub3 = subscribeToDrawings(p.id, setDrawings);
+      // Load payments and contacts via public (no-auth) endpoints
+      getPublicPayments(slug).then(setPayments);
+      getPublicContacts(slug).then(setContacts);
     }
     load();
     return () => { unsub1?.(); unsub2?.(); unsub3?.(); };
@@ -53,7 +60,7 @@ export default function PublicViewPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['dashboard', 'visual', 'drawings', 'schedule', 'photos', 'curing', 'cameras'].includes(tabParam)) {
+    if (tabParam && ['dashboard', 'visual', 'drawings', 'schedule', 'photos', 'curing', 'cameras', 'payments'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, []);
@@ -163,6 +170,13 @@ export default function PublicViewPage() {
                 : '💧 Curing Log'}
             </button>
           ))}
+          {/* Payments tab */}
+          <button
+            className={`tab ${activeTab === 'payments' ? 'active' : ''}`}
+            onClick={() => setActiveTab('payments')}
+          >
+            💳 Payments
+          </button>
           {/* CCTV tab — always visible */}
           <button
             className={`tab ${activeTab === 'cameras' ? 'active' : ''}`}
@@ -280,6 +294,15 @@ export default function PublicViewPage() {
               canEdit={false}
               project={project}
               onPhotoClick={(p, i) => setLightbox({ photos: p, index: i })}
+            />
+          )}
+
+          {/* ── Client Payments (read-only) ── */}
+          {activeTab === 'payments' && (
+            <PublicPaymentView
+              payments={payments}
+              contacts={contacts}
+              project={project}
             />
           )}
 
